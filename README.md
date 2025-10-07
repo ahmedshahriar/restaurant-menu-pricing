@@ -1,2 +1,2 @@
 # restaurant-menu-pricing
-Predict restaurant menu item prices from ingredients using machine learning on crawled Uber Eats data.
+Restaurant menu item prices prediction pipeline from ingredients using machine learning and deep learning with hyperparameter optimization on crawled Uber Eats data.
