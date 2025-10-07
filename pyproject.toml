@@ -24,6 +24,8 @@ dependencies = [
     "yellowbrick (>=1.5,<2.0)",
     "scikeras[tensorflow] (>=0.13.0,<0.14.0)",
     "loguru (>=0.7.3,<0.8.0)",
+    "pymongo (>=4.15.2,<5.0.0)",
+    "chompjs (>=1.4.0,<2.0.0)",
 ]
 
 [tool.poetry.requires-plugins]

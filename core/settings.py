@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     # MongoDB database
     DATABASE_HOST: str | None = None
     DATABASE_NAME: str | None = None
+    DATABASE_COLLECTION: str | None = None
 
     # huggingface token
     HUGGINGFACE_ACCESS_TOKEN: str | None = None
