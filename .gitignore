@@ -5,12 +5,11 @@
 
 # remove later
 data/
-application/
 application/datasets
 application/networks
 application/preprocessing
 application/utils
-pythonhasseed-issue.md
+backups/pythonhasseed-issue.md
 
 
 # IDE
