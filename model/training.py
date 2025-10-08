@@ -177,17 +177,6 @@ def _boxplot_cv_rmse(results: list[np.ndarray], labels: list[str], out_path: Pat
     return out_path
 
 
-# -------------------- Train & Evaluate --------------------
-# def evaluate(model: Pipeline, X_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, float]:
-#     """Compute MAE, RMSE, R2 for a fitted pipeline."""
-#     preds = model.predict(X_test)
-#     return {
-#         "MAE": float(mean_absolute_error(y_test, preds)),
-#         "RMSE": float(np.sqrt(mean_squared_error(y_test, preds))),
-#         "R2": float(r2_score(y_test, preds)),
-#     }
-
-
 def evaluate_model(model: Pipeline, X: pd.DataFrame, y: pd.Series) -> np.ndarray:
     n_folds = 5
     kf = KFold(n_folds, shuffle=True, random_state=settings.SEED).get_n_splits(X.values)
@@ -212,6 +201,7 @@ def train_and_compare(
     preprocessor: ColumnTransformer,
     cv_folds: int = 5,
     parent_run_name: str = "model-comparison",
+    registered_best_model: str | None = None,  # e.g., "ubereats-price-regressor"
 ) -> dict[str, dict[str, float]]:
     """
     Train & compare models using provided estimators+params (fixed or tuned).
@@ -222,7 +212,7 @@ def train_and_compare(
     cv_rmse_all: list[np.ndarray] = []
     labels: list[str] = []
 
-    with mlflow.start_run(run_name=parent_run_name):
+    with mlflow.start_run(run_name=parent_run_name) as parent_run:
         # ---- Parent context logs (simple, useful) ----
         mlflow.set_tags({"run_type": "comparison"})
         mlflow.log_params(
@@ -246,6 +236,7 @@ def train_and_compare(
 
         for name, (estimator, params) in models_with_params.items():
             with mlflow.start_run(run_name=name, nested=True):
+                # clone to ensure a fresh estimator for each run
                 est: BaseEstimator = clone(estimator)
                 if params:
                     est.set_params(**params)
@@ -300,17 +291,17 @@ def train_and_compare(
                 mlflow.log_metrics(metrics)
 
                 # Residuals
-                resid_path = Path(f"residuals_{name}.png")
+                resid_path = Path(settings.ARTIFACT_DIR, f"residuals_{name}.png")
                 _log_residuals_plot(pipe, X_train, y_train, X_test, y_test, resid_path)
                 mlflow.log_artifact(str(resid_path), artifact_path=f"plots/{name}")
 
                 # y_true vs y_pred (quick bias check)
                 plt.figure()
                 plt.scatter(y_test, y_pred, s=6)
-                plt.xlabel("y_true")
-                plt.ylabel("y_pred")
+                plt.xlabel("Ground Truth (y_true)")
+                plt.ylabel("Predictions (y_pred)")
                 plt.tight_layout()
-                yp_path = Path(f"y_true_vs_pred_{name}.png")
+                yp_path = Path(settings.ARTIFACT_DIR, f"y_true_vs_pred_{name}.png")
                 plt.savefig(yp_path)
                 plt.close()
                 mlflow.log_artifact(str(yp_path), artifact_path=f"plots/{name}")
@@ -326,7 +317,7 @@ def train_and_compare(
 
         # ---- Parent-level comparison artifacts ----
         # 1) Existing CV RMSE boxplot
-        cmp_path = Path("cv_rmse_comparison.png")
+        cmp_path = Path(settings.ARTIFACT_DIR, "cv_rmse_comparison.png")
         _boxplot_cv_rmse(cv_rmse_all, labels, cmp_path)
         mlflow.log_artifact(str(cmp_path), artifact_path="plots/comparison")
 
@@ -340,8 +331,8 @@ def train_and_compare(
         )
 
         # feed leaderboard artifacts
-        lb_csv = Path("leaderboard.csv")
-        lb_json = Path("leaderboard.json")
+        lb_csv = Path(settings.ARTIFACT_DIR, "leaderboard.csv")
+        lb_json = Path(settings.ARTIFACT_DIR, "leaderboard.json")
 
         leaderboard.to_csv(lb_csv, index=False)
         leaderboard.to_json(lb_json, orient="records", indent=2)
@@ -354,7 +345,7 @@ def train_and_compare(
         # plt.ylabel("CV RMSE mean (lower is better)")
         # plt.xticks(rotation=30, ha="right")
         # plt.tight_layout()
-        # bar_path = Path("cv_rmse_mean_bar.png")
+        # bar_path = Path(settings.ARTIFACT_DIR, "cv_rmse_mean_bar.png")
         # plt.savefig(bar_path)
         # plt.close()
         # mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
@@ -366,7 +357,7 @@ def train_and_compare(
         plt.ylabel("CV RMSE (mean ± std) — lower is better")
         plt.xticks(rotation=30, ha="right")
         plt.tight_layout()
-        bar_path = Path("cv_rmse_mean_bar.png")
+        bar_path = Path(settings.ARTIFACT_DIR, "cv_rmse_mean_bar.png")
         plt.savefig(bar_path)
         plt.close()
         mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
@@ -384,6 +375,31 @@ def train_and_compare(
                 "best_model_cv_rmse_std": f"{best_row['CV_RMSE_std']:.6f}",
             }
         )
+
+        # ---- register the best model from the comparison ----
+        if registered_best_model:
+            # Register the child-run artifact "model_<name>" from the best child run.
+            # Since we’re in the parent run, we reconstruct the path as a run-relative URI.
+            best_name = str(best_row["model"])
+            logger.info(f"Best model: {best_name}")
+            # Find the child run with that name among the active run’s children
+            # If you already know the run_id, you can pass it directly.
+            try:
+                client = mlflow.tracking.MlflowClient()
+                children = client.search_runs(
+                    experiment_ids=[parent_run.info.experiment_id],
+                    filter_string=f"tags.mlflow.parentRunId = '{parent_run.info.run_id}' and attributes.run_name = '{best_name}'",
+                    max_results=1,
+                )
+                logger.info(f"Found {len(children)} runs")
+                if children:
+                    child_run_id = children[0].info.run_id
+                    model_uri = f"runs:/{child_run_id}/model_{best_name}"
+                    mlflow.register_model(model_uri, name=registered_best_model)
+            except Exception:
+                logger.exception("Failed to register the best model")
+                # Non-fatal: leave registration best-effort
+                pass
 
     return results
 
