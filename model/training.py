@@ -1,4 +1,3 @@
-import ast
 import time
 from collections.abc import Mapping
 from pathlib import Path
@@ -7,20 +6,15 @@ from typing import Any
 import mlflow
 import mlflow.sklearn
 import numpy as np
-import optuna
 import pandas as pd
 from loguru import logger
 from matplotlib import pyplot as plt
 from mlflow.models import infer_signature
 from sklearn.base import BaseEstimator, clone
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
-from sklearn.model_selection import KFold, StratifiedShuffleSplit, cross_val_score
+from sklearn.model_selection import KFold, cross_val_score
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer, MinMaxScaler, OneHotEncoder
-from xgboost import XGBRegressor
 from yellowbrick.regressor import ResidualsPlot
 
 # --- App bootstrap & settings ---
@@ -28,109 +22,6 @@ from application.config.bootstrap import apply_global_settings
 from core.settings import settings
 
 apply_global_settings()
-
-
-# -------------------- Data --------------------
-def load_data(path: str) -> pd.DataFrame:
-    """
-    Load CSV and apply minimal parsing consistent with the notebook.
-    - parses `ingredients` as a Python list (tokenized) if present.
-    """
-    df = pd.read_csv(path)
-    if "ingredients" in df.columns:
-        df["ingredients"] = df["ingredients"].apply(ast.literal_eval)
-        logger.info(f"Loaded {len(df)} ingredients from {path}")
-    return df.reset_index(drop=True)
-
-
-# -------------------- Preprocessing --------------------
-def _dummy(doc):
-    """Pass-through tokenizer/preprocessor for already-tokenized text."""
-    return doc
-
-
-def build_preprocessor() -> ColumnTransformer:
-    """
-    Build the column transformer used in the notebook:
-      - numeric: MinMaxScaler
-      - categorical: OneHotEncoder
-      - text (ingredients): TF-IDF on pre-tokenized lists
-    """
-    numeric_cols = ["cost_of_living_index", "density"]
-    categorical_cols = ["category", "price_range", "state_id"]
-    text_cols = ["ingredients"]
-
-    num_tf = Pipeline([("scaler", MinMaxScaler())])
-
-    cat_tf = Pipeline([("onehot", OneHotEncoder(handle_unknown="ignore"))])
-
-    text_tf = Pipeline(
-        steps=[
-            ("squeeze", FunctionTransformer(lambda x: x.squeeze())),
-            (
-                "tfidf",
-                TfidfVectorizer(
-                    analyzer="word",
-                    tokenizer=_dummy,
-                    preprocessor=_dummy,
-                    token_pattern=None,
-                    max_features=None,
-                ),
-            ),
-        ]
-    )
-
-    return ColumnTransformer(
-        transformers=[
-            ("num", num_tf, numeric_cols),
-            ("cat", cat_tf, categorical_cols),
-            ("text", text_tf, text_cols),
-        ],
-        n_jobs=-1,
-    )
-
-
-def split_data(df: pd.DataFrame, test_size: float = 0.2) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-    """
-    Split the dataset into stratified train and test sets based on the 'category' column.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe containing features and 'price' target.
-    test_size : float, optional
-        Fraction of data to reserve for testing, by default 0.2.
-    random_state : int, optional
-        Random seed for reproducibility, by default 33.
-
-    Returns
-    -------
-    Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]
-        X_train, X_test, y_train, y_test
-    """
-    strat_train_set, strat_test_set = None, None
-    strat_split = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=settings.SEED)
-
-    for train_idx, test_idx in strat_split.split(df, df["category"]):
-        strat_train_set = df.loc[train_idx].copy()
-        strat_test_set = df.loc[test_idx].copy()
-
-    X_train = strat_train_set.drop(columns=["price"])
-    y_train = strat_train_set["price"]
-
-    X_test = strat_test_set.drop(columns=["price"])
-    y_test = strat_test_set["price"]
-
-    # Log split shapes
-    logger.info(f"Data split: {len(df)} rows, train:test = {1 - test_size:.0%}:{test_size:.0%}")
-    logger.info(f"X_train: {X_train.shape}, y_train: {y_train.shape}")
-    logger.info(f"X_test: {X_test.shape}, y_test: {y_test.shape}")
-
-    # Log stratification distribution
-    logger.info(f"Train category distribution:\n{strat_train_set['category'].value_counts(normalize=True)}")
-    logger.info(f"Test category distribution:\n{strat_test_set['category'].value_counts(normalize=True)}")
-
-    return X_train, X_test, y_train, y_test
 
 
 def _log_residuals_plot(
@@ -402,60 +293,3 @@ def train_and_compare(
                 pass
 
     return results
-
-
-def tune_random_forest(
-    X: pd.DataFrame,
-    y: pd.Series,
-    preprocessor: ColumnTransformer,
-    n_trials: int = 20,
-    scoring_criterion: str = "neg_mean_absolute_error",
-) -> dict[str, int]:
-    """Optuna tuning for RandomForestRegressor (minimize MAE via 3-fold CV)."""
-
-    def objective(trial: optuna.Trial) -> float:
-        params = {
-            "n_estimators": trial.suggest_int("n_estimators", 50, 300),
-            "max_depth": trial.suggest_int("max_depth", 3, 20),
-            "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
-            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 4),
-        }
-        model = RandomForestRegressor(random_state=settings.SEED, **params)
-        pipe = Pipeline([("preprocessor", preprocessor), ("model", model)])
-        cv = KFold(n_splits=3, shuffle=True, random_state=settings.SEED)
-        scores = cross_val_score(pipe, X, y, cv=cv, scoring=scoring_criterion)
-        return -scores.mean()
-
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=n_trials)
-    logger.info(f"Best RF params: {study.best_params}")
-    return study.best_params, study.best_value  # type: ignore[return-value]
-
-
-def tune_xgboost(
-    X: pd.DataFrame,
-    y: pd.Series,
-    preprocessor: ColumnTransformer,
-    n_trials: int = 20,
-    scoring_criterion: str = "neg_mean_absolute_error",
-) -> dict[str, float | int]:
-    """Optuna tuning for XGBRegressor (minimize MAE via 3-fold CV)."""
-
-    def objective(trial: optuna.Trial) -> float:
-        params = {
-            "n_estimators": trial.suggest_int("n_estimators", 50, 1000, step=50),
-            "max_depth": trial.suggest_int("max_depth", 3, 12),
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3),
-            "subsample": trial.suggest_float("subsample", 0.5, 1.0),
-            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
-        }
-        model = XGBRegressor(random_state=settings.SEED, **params)
-        pipe = Pipeline([("preprocessor", preprocessor), ("model", model)])
-        cv = KFold(n_splits=3, shuffle=True, random_state=settings.SEED)
-        scores = cross_val_score(pipe, X, y, cv=cv, scoring=scoring_criterion)
-        return -scores.mean()
-
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=n_trials)
-    logger.info(f"Best XGB params: {study.best_params}")
-    return study.best_params, study.best_value  # type: ignore[return-value]

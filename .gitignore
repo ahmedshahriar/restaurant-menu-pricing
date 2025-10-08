@@ -5,9 +5,10 @@
 
 # remove later
 data/
-application/datasets
+readme-demo.md
+
+application/datasets/generation.py
 application/networks
-application/preprocessing
 application/utils
 backups/pythonhasseed-issue.md
 
