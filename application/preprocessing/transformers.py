@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, MinMaxScaler, OneHotEncoder
 
-from .schema import CATEGORICAL_COLS, NUMERIC_COLS, TEXT_COLS
+from .schema import schema
 from .text import dummy as _dummy  # or inline if tiny
 
 
@@ -17,6 +17,10 @@ def build_preprocessor() -> ColumnTransformer:
         ]
     )
     return ColumnTransformer(
-        [("num", num_tf, NUMERIC_COLS), ("cat", cat_tf, CATEGORICAL_COLS), ("text", text_tf, TEXT_COLS)],
+        [
+            ("num", num_tf, list(schema.numeric)),
+            ("cat", cat_tf, list(schema.categorical)),
+            ("text", text_tf, list(schema.text)),
+        ],
         n_jobs=-1,
     )
