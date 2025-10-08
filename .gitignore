@@ -3,6 +3,16 @@
 **/.DS_Store
 **/._.DS_Store
 
+# remove later
+data/
+application/
+application/datasets
+application/networks
+application/preprocessing
+application/utils
+pythonhasseed-issue.md
+
+
 # IDE
 .idea
 .vscode
@@ -11,7 +21,23 @@
 kaggle.json
 backups
 notes.md
-mlruns/
+
+# MLflow specific
+# MLflow tracking runs directory
+mlruns
+# Directory for MLflow artifacts if not using a remote store
+mlflow-artifacts
+mlartifacts
+
+# Models and artifacts
+models/ # Directory for saved models (if not managed by MLflow Model Registry)
+*.h5 # Keras/TensorFlow model files
+*.pth # PyTorch model files
+*.onnx # ONNX model files
+
+# Configuration and credentials
+config.ini # Configuration files with sensitive information
+credentials.json # Credential files
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
