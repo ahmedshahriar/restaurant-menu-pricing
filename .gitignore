@@ -28,6 +28,8 @@ mlruns
 # Directory for MLflow artifacts if not using a remote store
 mlflow-artifacts
 mlartifacts
+# custom artifacts directory
+artifacts
 
 # Models and artifacts
 models/ # Directory for saved models (if not managed by MLflow Model Registry)

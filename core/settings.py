@@ -36,5 +36,8 @@ class Settings(BaseSettings):
     DATASET_SAMPLED_PATH: str | None = None
     DATASET_SAMPLED_WITH_EMBEDDINGS_PATH: str | None = None
 
+    # artifacts directory
+    ARTIFACT_DIR: str | None = None
+
 
 settings = Settings()
