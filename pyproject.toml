@@ -2,91 +2,70 @@
 name = "restaurant-menu-pricing"
 version = "0.1.0"
 description = "UberEats menu price prediction"
-authors = [
-    {name = "ahmedshahriar",email = "ahmed.shahriar.sakib@gmail.com"}
-]
+authors = [{ name = "ahmedshahriar", email = "ahmed.shahriar.sakib@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [
-    "scrapy (>=2.13.3,<3.0.0)",
-    "scikit-learn (>=1.7.2,<2.0.0)",
-    "transformers (>=4.56.2,<5.0.0)",
-    "xgboost (>=3.0.5,<4.0.0)",
-    "pydantic (>=2.11.10,<3.0.0)",
-    "tensorflow-macos (>=2.16.2,<3.0.0)",
-    "tensorflow-metal (>=1.2.0,<2.0.0)",
-    "mlflow (>=3.4.0,<4.0.0)",
-    "torch (>=2.8.0,<3.0.0)",
-    "beautifulsoup4 (>=4.14.2,<5.0.0)",
-    "seaborn (>=0.13.2,<0.14.0)",
-    "kagglehub (>=0.3.13,<0.4.0)",
-    "optuna (>=4.5.0,<5.0.0)",
-    "yellowbrick (>=1.5,<2.0)",
-    "scikeras[tensorflow] (>=0.13.0,<0.14.0)",
-    "loguru (>=0.7.3,<0.8.0)",
-    "pymongo (>=4.15.2,<5.0.0)",
-    "chompjs (>=1.4.0,<2.0.0)",
+  "scrapy>=2.13.3,<3.0.0",
+  "scikit-learn>=1.7.2,<2.0.0",
+  "transformers>=4.56.2,<4.57.0", # broken metadata err v4.57.0 https://github.com/huggingface/transformers/issues/41331
+  "xgboost>=3.0.5,<4.0.0",
+  "pydantic>=2.11.10,<3.0.0",
+  "tensorflow-macos>=2.16.2,<3.0.0",
+  "tensorflow-metal>=1.2.0,<2.0.0",
+  "mlflow>=3.4.0,<4.0.0",
+  "torch>=2.8.0,<3.0.0",
+  "beautifulsoup4>=4.14.2,<5.0.0",
+  "seaborn>=0.13.2,<0.14.0",
+  "kagglehub>=0.3.13,<0.4.0",
+  "optuna>=4.5.0,<5.0.0",
+  "yellowbrick>=1.5,<2.0",
+  "scikeras[tensorflow]>=0.13.0,<0.14.0",
+  "loguru>=0.7.3,<0.8.0",
+  "pymongo>=4.15.2,<5.0.0",
+  "chompjs>=1.4.0,<2.0.0",
 ]
 
-[tool.poetry.requires-plugins]
-poethepoet = { version = "~0.35.0", extras = ["poetry_plugin"]}
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+ruff = "0.13.3"
+pytest = "8.4.2"
+pre-commit = "4.3.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[dependency-groups]
-dev = [
-    "ruff (>=0.13.3,<0.14.0)",
-    "pytest (>=8.4.2,<9.0.0)",
-    "pre-commit (>=4.3.0,<5.0.0)"
-]
+# (Optional) Poetry plugin requirement – OK to keep even when using [project]
+[tool.poetry.requires-plugins]
+poethepoet = { version = "~0.35.0", extras = ["poetry_plugin"] }
 
 [tool.ruff]
 target-version = "py311"
 line-length = 120
 indent-width = 4
-exclude = [
-  ".venv", "venv", "env",
-  "build", "dist",
-  ".mypy_cache", ".ruff_cache", ".pytest_cache",
-]
+exclude = [".venv","venv","env","build","dist",".mypy_cache",".ruff_cache",".pytest_cache"]
 
 [tool.ruff.format]
-# Like Black, respect magic trailing commas.
 skip-magic-trailing-comma = false
-
-# Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
 
 [tool.ruff.lint]
-# Core, fast, high-signal rule sets:
-select = [
-  "E",   # pycodestyle errors
-  "F",   # pyflakes
-  "I",   # isort (import order)
-  "B",   # flake8-bugbear (common pitfalls)
-  "UP",  # pyupgrade (modernize syntax)
-]
-# Let the formatter handle long lines; don’t double-warn:
+select = ["E","F","I","B","UP"]
 ignore = ["E501"]
-# Allow Ruff to auto-fix everything it safely can:
 fixable = ["ALL"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["application", "core"]
+
 [tool.poe.tasks]
-# Simple demo
 hello = "echo 'Hello from Poe the Poet 👋'"
-
-
-# QA
-# Code quality
 lint-check = "poetry run ruff check ."
 format-check = "poetry run ruff format --check ."
-## with auto-fix
 lint-fix = "poetry run ruff check --fix ."
 format-fix = "poetry run ruff format ."
 
-
-# Tests
 [tool.poe.tasks.test]
 cmd = "poetry run pytest tests/"
