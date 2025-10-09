@@ -24,6 +24,8 @@ dependencies = [
   "loguru>=0.7.3,<0.8.0",
   "pymongo>=4.15.2,<5.0.0",
   "chompjs>=1.4.0,<2.0.0",
+  "optuna-integration[mlflow] (>=4.5.0,<5.0.0)",
+  "plotly (>=6.3.1,<7.0.0)",
 ]
 
 [tool.poetry]

@@ -68,21 +68,6 @@ def _boxplot_cv_rmse(results: list[np.ndarray], labels: list[str], out_path: Pat
     return out_path
 
 
-def evaluate_model(model: Pipeline, X: pd.DataFrame, y: pd.Series) -> np.ndarray:
-    n_folds = 5
-    kf = KFold(n_folds, shuffle=True, random_state=settings.SEED).get_n_splits(X.values)
-    scores = cross_val_score(
-        model,
-        X,
-        y,
-        scoring="neg_mean_squared_error",
-        cv=kf,
-        n_jobs=-1,
-        error_score="raise",
-    )
-    return scores
-
-
 def train_and_compare(
     models_with_params: Mapping[str, tuple[BaseEstimator, dict[str, Any]]],
     X_train: pd.DataFrame,
