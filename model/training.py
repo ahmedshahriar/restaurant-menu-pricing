@@ -108,7 +108,7 @@ def train_and_compare(
         # CV strategy snapshot
         mlflow.log_dict({"n_splits": cv_folds, "shuffle": True, "random_state": settings.SEED}, "context/cv.json")
 
-        kf = KFold(n_splits=cv_folds, shuffle=True, random_state=33)
+        kf = KFold(n_splits=cv_folds, shuffle=True, random_state=settings.SEED)
 
         for name, (estimator, params) in models_with_params.items():
             with mlflow.start_run(run_name=name, nested=True):
@@ -192,12 +192,12 @@ def train_and_compare(
                 )
 
         # ---- Parent-level comparison artifacts ----
-        # 1) Existing CV RMSE boxplot
+        # Existing CV RMSE boxplot
         cmp_path = Path(settings.ARTIFACT_DIR, "cv_rmse_comparison.png")
         _boxplot_cv_rmse(cv_rmse_all, labels, cmp_path)
         mlflow.log_artifact(str(cmp_path), artifact_path="plots/comparison")
 
-        # 2) Leaderboard CSV/JSON (sorted by CV_RMSE_mean)
+        # Leaderboard CSV/JSON (sorted by CV_RMSE_mean)
         # generate leaderboard DataFrame
         leaderboard = (
             pd.DataFrame.from_dict(results, orient="index")
@@ -216,15 +216,15 @@ def train_and_compare(
         mlflow.log_artifact(str(lb_csv), artifact_path="tables")
         mlflow.log_artifact(str(lb_json), artifact_path="tables")
 
-        # 3) Simple bar chart for CV_RMSE_mean
-        # plt.bar(leaderboard["model"], leaderboard["CV_RMSE_mean"])
-        # plt.ylabel("CV RMSE mean (lower is better)")
-        # plt.xticks(rotation=30, ha="right")
-        # plt.tight_layout()
-        # bar_path = Path(settings.ARTIFACT_DIR, "cv_rmse_mean_bar.png")
-        # plt.savefig(bar_path)
-        # plt.close()
-        # mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
+        # Simple bar chart for CV_RMSE_mean
+        plt.bar(leaderboard["model"], leaderboard["CV_RMSE_mean"])
+        plt.ylabel("CV RMSE mean (lower is better)")
+        plt.xticks(rotation=30, ha="right")
+        plt.tight_layout()
+        bar_path = Path(settings.ARTIFACT_DIR, "cv_rmse_mean_bar.png")
+        plt.savefig(bar_path)
+        plt.close()
+        mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
 
         means = leaderboard["CV_RMSE_mean"].values
         stds = leaderboard["CV_RMSE_std"].values
@@ -238,11 +238,11 @@ def train_and_compare(
         plt.close()
         mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
 
-        # 4) Raw CV arrays (re-plot later if needed)
+        # Raw CV arrays (re-plot later if needed)
         cv_dump = {lbl: arr.tolist() for lbl, arr in zip(labels, cv_rmse_all, strict=False)}
         mlflow.log_dict(cv_dump, artifact_file="cv_rmse_raw.json")
 
-        # 5) Tag best model on the parent run
+        # Tag best model on the parent run
         best_row = leaderboard.iloc[0]
         mlflow.set_tags(
             {
