@@ -11,42 +11,12 @@ import pandas as pd
 from loguru import logger
 from mlflow.models import infer_signature
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import KFold, cross_val_score
 from sklearn.pipeline import Pipeline
 
 from core.settings import settings
 
 from .specs import get_model_spec
-
-
-def tune_random_forest(
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
-    X_test: pd.DataFrame,
-    y_test: pd.Series,
-    preprocessor: ColumnTransformer,
-    model_name: str,
-    n_trials: int = 5,
-    scoring_criterion: str = "neg_mean_squared_error",
-) -> dict[str, int]:
-    def objective(trial: optuna.Trial) -> float:
-        params = {
-            "n_estimators": trial.suggest_int("n_estimators", 50, 300),
-            "max_depth": trial.suggest_int("max_depth", 3, 20),
-            "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
-            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 4),
-        }
-        model = RandomForestRegressor(random_state=settings.SEED, **params)
-        pipe = Pipeline([("preprocessor", preprocessor), ("model", model)])
-        cv = KFold(n_splits=3, shuffle=True, random_state=settings.SEED)
-        scores = cross_val_score(pipe, X_train, y_train, cv=cv, scoring=scoring_criterion)
-        return -scores.mean()
-
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=n_trials)
-    logger.info(f"Best RF params: {study.best_params}")
-    return study.best_params, study.best_value  # type: ignore[return-value]
 
 
 def _pred_vs_true_figure(y_true: pd.Series, y_pred: np.ndarray, title: str = "Predicted vs True"):
@@ -67,7 +37,7 @@ def plot_residuals(model, X_test, y_test, save_path=None):
     Plots the residuals of the model predictions against the true values.
 
     Args:
-    - model: The trained XGBoost model.
+    - model: The trained  model.
     - X_test: The feature set for the validation set.
     - y_test: The true values for the validation set.
     - save_path (str, optional): Path to save the generated plot. If not specified, plot won't be saved.
@@ -270,10 +240,7 @@ def tune_model(
         if trial_rows:
             # generate leaderboard DataFrame
             leaderboard = (
-                pd.DataFrame(trial_rows)
-                .assign(model=lambda d: d.index)
-                .sort_values("objective_value")
-                .reset_index(drop=True)
+                pd.DataFrame(trial_rows).assign(model=model_name).sort_values("objective_value").reset_index(drop=True)
             )
 
             # feed leaderboard artifacts

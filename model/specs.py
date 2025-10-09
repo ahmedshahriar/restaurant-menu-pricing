@@ -31,9 +31,10 @@ class ModelSpec:
     base_kwargs: dict[str, Any]
     param_space: Callable[[optuna.Trial], dict[str, Any]] | None
 
-    def build(self, params: dict[str, Any]) -> BaseEstimator:
+    def build(self, params: dict[str, Any] | None = None) -> BaseEstimator:
         """Instantiate estimator with base kwargs merged with tuned params."""
         # tuned params should override base defaults if keys collide
+        params = params or {}
         merged = {**self.base_kwargs, **params}
         return self.estimator_cls(**merged)
 
@@ -42,7 +43,7 @@ class ModelSpec:
 
 LR_REG = ModelSpec(
     name="lr",
-    estimator_cls=LinearRegression,  # Placeholder; replace with LinearRegression if needed
+    estimator_cls=LinearRegression,
     base_kwargs={
         "n_jobs": -1,
     },
@@ -51,33 +52,32 @@ LR_REG = ModelSpec(
 
 RIDGE_REG = ModelSpec(
     name="ridge",
-    estimator_cls=Ridge,  # Placeholder; replace with Ridge if needed
+    estimator_cls=Ridge,
     base_kwargs={
         "n_jobs": -1,
         "random_state": settings.SEED,
     },
     param_space=lambda trial: {
-        "alpha": trial.suggest_loguniform("alpha", 1e-5, 1e2),
+        "alpha": trial.suggest_float("alpha", 1e-5, 1e2, log=True),
     },
 )
 
 LASSO_REG = ModelSpec(
     name="lasso",
-    estimator_cls=Lasso,  # Placeholder; replace with Lasso if needed
+    estimator_cls=Lasso,
     base_kwargs={
         "n_jobs": -1,
         "random_state": settings.SEED,
     },
     param_space=lambda trial: {
-        "alpha": trial.suggest_loguniform("alpha", 1e-5, 1e2),
+        "alpha": trial.suggest_float("alpha", 1e-5, 1e2, log=True),
     },
 )
 
 DTREE_REG = ModelSpec(
     name="dtree",
-    estimator_cls=DecisionTreeRegressor,  # Placeholder; replace with DecisionTreeRegressor if needed
+    estimator_cls=DecisionTreeRegressor,
     base_kwargs={
-        "n_jobs": -1,
         "random_state": settings.SEED,
     },
     param_space=dtree_space,
