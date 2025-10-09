@@ -1,48 +1,35 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import mlflow
 import numpy as np
 import optuna
 import pandas as pd
-import seaborn as sns
 from loguru import logger
 from mlflow.models import infer_signature
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import KFold, cross_val_score
 from sklearn.pipeline import Pipeline
-from xgboost import XGBRegressor
 
 from core.settings import settings
 
+from .specs import get_model_spec
 
-def tune_random_forest(
-    X: pd.DataFrame,
-    y: pd.Series,
-    preprocessor: ColumnTransformer,
-    n_trials: int = 3,
-    scoring_criterion: str = "neg_mean_squared_error",
-) -> dict[str, int]:
-    def objective(trial: optuna.Trial) -> float:
-        params = {
-            "n_estimators": trial.suggest_int("n_estimators", 50, 300),
-            "max_depth": trial.suggest_int("max_depth", 3, 20),
-            "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
-            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 4),
-        }
-        model = RandomForestRegressor(random_state=settings.SEED, **params)
-        pipe = Pipeline([("preprocessor", preprocessor), ("model", model)])
-        cv = KFold(n_splits=3, shuffle=True, random_state=settings.SEED)
-        scores = cross_val_score(pipe, X, y, cv=cv, scoring=scoring_criterion)
-        return -scores.mean()
 
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=n_trials)
-    logger.info(f"Best RF params: {study.best_params}")
-    return study.best_params, study.best_value  # type: ignore[return-value]
+def _pred_vs_true_figure(y_true: pd.Series, y_pred: np.ndarray, title: str = "Predicted vs True"):
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.scatter(y_true, y_pred, alpha=0.35)
+    m = float(min(float(np.min(y_true)), float(np.min(y_pred))))
+    M = float(max(float(np.max(y_true)), float(np.max(y_pred))))
+    ax.plot([m, M], [m, M], linestyle="--")
+    ax.set_xlabel("True")
+    ax.set_ylabel("Predicted")
+    ax.set_title(title)
+    fig.tight_layout()
+    return fig
 
 
 def plot_residuals(model, X_test, y_test, save_path=None):
@@ -50,9 +37,9 @@ def plot_residuals(model, X_test, y_test, save_path=None):
     Plots the residuals of the model predictions against the true values.
 
     Args:
-    - model: The trained XGBoost model.
-    - dvalid (xgb.DMatrix): The validation data in XGBoost DMatrix format.
-    - valid_y (pd.Series): The true values for the validation set.
+    - model: The trained  model.
+    - X_test: The feature set for the validation set.
+    - y_test: The true values for the validation set.
     - save_path (str, optional): Path to save the generated plot. If not specified, plot won't be saved.
 
     Returns:
@@ -64,9 +51,6 @@ def plot_residuals(model, X_test, y_test, save_path=None):
 
     # Calculate residuals
     residuals = y_test - preds
-
-    # Set Seaborn style
-    sns.set_style("whitegrid", {"axes.facecolor": "#c2c4c2", "grid.linewidth": 1.5})
 
     # Create scatter plot
     fig = plt.figure(figsize=(12, 8))
@@ -85,7 +69,7 @@ def plot_residuals(model, X_test, y_test, save_path=None):
 
     # Save the plot if save_path is specified
     if save_path:
-        plt.savefig(save_path, format="png", dpi=600)
+        plt.savefig(save_path, format="png", dpi=300)
 
     # Show the plot
     plt.close(fig)
@@ -119,21 +103,22 @@ def champion_callback(study, frozen_trial):
             logger.info(f"Initial trial {frozen_trial.number} achieved value: {frozen_trial.value}")
 
 
-def tune_xgboost(
+def tune_model(
     X_train: pd.DataFrame,
     y_train: pd.Series,
     X_test: pd.DataFrame,
     y_test: pd.Series,
     preprocessor: ColumnTransformer,
+    model_name: str,
     n_trials: int = 5,
+    cv_folds: int = 5,
     scoring_criterion: str = "neg_mean_squared_error",
-    run_name: str = "hyperparameter-sweep-xgboost",
 ) -> tuple[dict[str, float | int], float]:
     """
     One MLflow parent run + a nested child run per Optuna trial.
 
     Trial logs (child run):
-      • searched hyperparameters (your original space)
+      • searched hyperparameters (given hyperparameter space)
       • objective_value  -> positive MSE (= -mean(neg_MSE))  (single objective per trial)
       • cv_mean_neg, cv_std, rmse (sqrt(objective_value)), n_splits, trial_fit_time_sec
       • the trained pipeline (preprocessor + model) with a real model signature
@@ -145,41 +130,39 @@ def tune_xgboost(
     Returns: (best_params, best_value)
     """
 
-    with mlflow.start_run(run_name=run_name):
+    model_spec = get_model_spec(model_name)  # e.g., "rforest" or "xgboost"
+
+    with mlflow.start_run(run_name=f"{model_name}-tuning"):
         # log tags
         mlflow.set_tags(
             {
                 "project": "Restaurant Menu Pricing",
                 "run_type": "hpo",
-                "model_family": "xgboost",
+                "model_family": f"{model_name}",
                 "optimizer_engine": "optuna",
                 "scoring": scoring_criterion,
                 "n_trials": n_trials,
+                "cv_folds": cv_folds,
                 "feature_set_version": 1,
             }
         )
 
+        trial_rows: list[dict] = []
+
         def objective(trial: optuna.Trial) -> float:
-            # Your original search space (kept intentionally small)
-            params: dict[str, float | int] = {
-                "n_estimators": trial.suggest_int("n_estimators", 50, 1000, step=50),
-                # uncomment any of these when you want to expand the sweep (kept minimal as requested)
-                "max_depth": trial.suggest_int("max_depth", 3, 12),
-                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3),
-                "subsample": trial.suggest_float("subsample", 0.5, 1.0),
-                "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
-                "random_state": settings.SEED,
-            }
-
-            # One child run per trial (official MLflow pattern). :contentReference[oaicite:2]{index=2}
+            # One child run per trial (official mlflow pattern)
             with mlflow.start_run(nested=True, run_name=f"trial_{trial.number}"):
-                mlflow.log_params(params)  # log hyperparameters. :contentReference[oaicite:3]{index=3}
+                # 1) sample hyperparameters from the spec's space
+                params = model_spec.param_space(trial)
+                # 2) build the estimator with base kwargs merged with trial params
+                model = model_spec.build(params)
 
-                model = XGBRegressor(**params)
+                mlflow.log_params(params)
+
+                # model = XGBRegressor(**params)
                 pipe = Pipeline([("preprocessor", preprocessor), ("model", model)])
 
-                # 3-fold CV on neg MSE (scikit returns negatives to keep "maximize" convention). :contentReference[oaicite:4]{index=4}
-                cv = KFold(n_splits=3, shuffle=True, random_state=settings.SEED)
+                cv = KFold(n_splits=cv_folds, shuffle=True, random_state=settings.SEED)
                 t0 = time.perf_counter()
                 scores = cross_val_score(pipe, X_train, y_train, cv=cv, scoring=scoring_criterion)
                 fit_time = time.perf_counter() - t0
@@ -191,26 +174,45 @@ def tune_xgboost(
                 rmse = float(np.sqrt(objective_value))  # convenience for eyeballing
 
                 # Log a concise set of trial metrics (single objective + a few helpers)
-                # mlflow.log_metric("objective_value", objective_value)   # main trial metric. :contentReference[oaicite:5]{index=5}
+                # mlflow.log_metric("objective_value", objective_value)
                 mlflow.log_metric("cv_mse_mean", -cv_mean_neg)
                 mlflow.log_metric("cv_mse_std", cv_std)
                 mlflow.log_metric("cv_rmse", rmse)
                 mlflow.log_metric("n_splits", cv.get_n_splits(X_train, y_train))
                 mlflow.log_metric("trial_fit_time_sec", fit_time)
 
-                # Log the trained pipeline for this trial with a proper signature. :contentReference[oaicite:6]{index=6}
+                # Log the trained pipeline for this trial with a proper signature.
                 pipe.fit(X_train, y_train)
 
-                signature_example = X_train.iloc[:10]
-                signature_out = pipe.predict(signature_example)
-
-                signature = infer_signature(signature_example, signature_out)
+                example_in = X_train.iloc[:10]
+                signature_ml = infer_signature(example_in, pipe.predict(example_in))
 
                 mlflow.sklearn.log_model(
                     sk_model=pipe,
-                    name=f"model_pipeline_xgb_{trial.number}",  # fixed name for all trials
-                    signature=signature,
-                    input_example=signature_example,  # also displayed in UI
+                    name=f"model_pipeline_{model_name}_{trial.number}",  # fixed name for all trials
+                    signature=signature_ml,
+                    input_example=example_in,  # also displayed in UI
+                )
+
+                # Trial-level figure (Pred vs True on held-out test)
+                y_pred_test = pipe.predict(X_test)
+                fig = _pred_vs_true_figure(
+                    y_true=y_test, y_pred=y_pred_test, title=f"{model_name}-Trial {trial.number} – Pred vs True (test)"
+                )
+                mlflow.log_figure(fig, f"plots/{model_name}_pred_vs_true_test.png")
+                plt.close(fig)
+
+                # keep a compact table row for parent summary CSV
+                trial_rows.append(
+                    {
+                        "trial": trial.number,
+                        **params,
+                        "objective_value": objective_value,
+                        "rmse": rmse,
+                        "cv_mean_neg": cv_mean_neg,
+                        "cv_std": cv_std,
+                        "fit_time_sec": fit_time,
+                    }
                 )
 
                 # Optional breadcrumb: link back the run id to the Optuna trial
@@ -222,33 +224,55 @@ def tune_xgboost(
         study = optuna.create_study(direction="minimize")
         study.optimize(objective, n_trials=n_trials, callbacks=[champion_callback])
 
-        mlflow.log_params(study.best_params)
-        mlflow.log_metric("best_mse", study.best_value)
-        mlflow.log_metric("best_rmse", np.sqrt(study.best_value))
-
-        # Optimization History Plot
-        fig_history = optuna.visualization.plot_optimization_history(study)
-        mlflow.log_figure(fig_history, "optimization_history.html")
-
-        # Parameter Importance Plot
-        fig_importance = optuna.visualization.plot_param_importances(study)
-        mlflow.log_figure(fig_importance, "param_importances.html")
-
-        # Parent-level: record the best
+        # ----- Parent-level logging -----
+        # Best params & metrics
         best_params: dict[str, float | int] = study.best_params
         best_value: float = float(study.best_value)
-        mlflow.log_params({f"best_{k}": v for k, v in best_params.items()})
-        mlflow.log_metric("best_objective", best_value)
+        # mlflow.log_params({f"best_{k}": v for k, v in best_params.items()})
+        # mlflow.log_metric("best_objective_value", best_value)
+
+        mlflow.log_params(best_params)
+        mlflow.log_metric("best_mse", best_value)
+        mlflow.log_metric("best_objective_value", best_value)
+        mlflow.log_metric("best_rmse", np.sqrt(best_value))
+
+        # Trials summary CSV (quick compare at parent level)
+        if trial_rows:
+            # generate leaderboard DataFrame
+            leaderboard = (
+                pd.DataFrame(trial_rows).assign(model=model_name).sort_values("objective_value").reset_index(drop=True)
+            )
+
+            # feed leaderboard artifacts
+            lb_csv = Path(settings.ARTIFACT_DIR, f"{model_name}_trials_summary.csv")
+            lb_json = Path(settings.ARTIFACT_DIR, f"{model_name}_trials_summary.json")
+
+            leaderboard.to_csv(lb_csv, index=False)
+            leaderboard.to_json(lb_json, orient="records", indent=2)
+
+            mlflow.log_artifact(str(lb_csv), artifact_path="tables")
+            mlflow.log_artifact(str(lb_json), artifact_path="tables")
+
+        # Optimization Plot
+        # Optimization History Plot
+        fig_history = optuna.visualization.plot_optimization_history(study)
+        mlflow.log_figure(fig_history, "plots/optimization_history.html")
+
+        # Optimization Hyperparameter Importance Plot
+        fig_importances = optuna.visualization.plot_param_importances(study)
+        mlflow.log_figure(fig_importances, "plots/param_importances.html")
 
         # Log a fit model instance
-        pipe = Pipeline([("preprocessor", preprocessor), ("model", XGBRegressor(**best_params))])
+        spec = get_model_spec(model_name)
+        final_model = spec.build(best_params)
+        pipe = Pipeline([("preprocessor", preprocessor), ("model", final_model)])
         pipe.fit(X_train, y_train)
 
         # Log the residuals plot
         residuals = plot_residuals(pipe, X_test, y_test)
-        mlflow.log_figure(figure=residuals, artifact_file="residuals.png")
+        mlflow.log_figure(figure=residuals, artifact_file="plots/residuals.png")
 
-        artifact_path = "best_model"
+        artifact_path = f"best_model_{model_name}"
 
         signature_example = X_train.iloc[:10]
         signature_out = pipe.predict(signature_example)
@@ -256,9 +280,9 @@ def tune_xgboost(
 
         mlflow.sklearn.log_model(
             sk_model=pipe,
-            name=artifact_path,  # NOTE: use artifact_path (not name)
+            name=artifact_path,
             signature=signature,
-            input_example=signature_example,  # also displayed in UI
+            input_example=signature_example,
         )
 
         # Get the logged model uri so that we can load it from the artifact store

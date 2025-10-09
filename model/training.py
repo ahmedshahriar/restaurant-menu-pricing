@@ -1,7 +1,6 @@
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
 import mlflow
 import mlflow.sklearn
@@ -10,7 +9,6 @@ import pandas as pd
 from loguru import logger
 from matplotlib import pyplot as plt
 from mlflow.models import infer_signature
-from sklearn.base import BaseEstimator, clone
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from sklearn.model_selection import KFold, cross_val_score
@@ -20,6 +18,7 @@ from yellowbrick.regressor import ResidualsPlot
 # --- App bootstrap & settings ---
 from application.config.bootstrap import apply_global_settings
 from core.settings import settings
+from model import get_model_spec
 
 apply_global_settings()
 
@@ -69,7 +68,7 @@ def _boxplot_cv_rmse(results: list[np.ndarray], labels: list[str], out_path: Pat
 
 
 def train_and_compare(
-    models_with_params: Mapping[str, tuple[BaseEstimator, dict[str, Any]]],
+    models_with_params: Mapping[str, dict[str, int | float | str]],
     X_train: pd.DataFrame,
     y_train: pd.Series,
     X_test: pd.DataFrame,
@@ -101,25 +100,24 @@ def train_and_compare(
         )
         # Log models+params mapping for traceability
         mlflow.log_dict(
-            {k: v[1] for k, v in models_with_params.items()},
+            {k: v for k, v in models_with_params.items()},
             artifact_file="models_params.json",
         )
 
         # CV strategy snapshot
         mlflow.log_dict({"n_splits": cv_folds, "shuffle": True, "random_state": settings.SEED}, "context/cv.json")
 
-        kf = KFold(n_splits=cv_folds, shuffle=True, random_state=33)
+        kf = KFold(n_splits=cv_folds, shuffle=True, random_state=settings.SEED)
 
-        for name, (estimator, params) in models_with_params.items():
-            with mlflow.start_run(run_name=name, nested=True):
+        for model_name, params in models_with_params.items():
+            with mlflow.start_run(run_name=model_name, nested=True):
                 # clone to ensure a fresh estimator for each run
-                est: BaseEstimator = clone(estimator)
-                if params:
-                    est.set_params(**params)
+                spec = get_model_spec(model_name)
+                final_model = spec.build(params)
 
-                pipe = Pipeline([("preprocessor", preprocessor), ("model", est)])
+                pipe = Pipeline([("preprocessor", preprocessor), ("model", final_model)])
 
-                logger.info(f"Fitting {name} model with params: {est.get_params()}")
+                logger.info(f"Fitting {model_name} model with params: {params}")
 
                 # --- CV RMSE on the whole pipeline ---
                 cv_scores = cross_val_score(
@@ -133,7 +131,7 @@ def train_and_compare(
                 )
                 cv_rmse = np.sqrt(-cv_scores)
                 cv_rmse_all.append(cv_rmse)
-                labels.append(name)
+                labels.append(model_name)
 
                 # --- Fit / timings ---
                 t0 = time.time()
@@ -158,18 +156,18 @@ def train_and_compare(
                 infer_ms = (time.time() - t0) / batch_n * 1000
                 metrics["avg_infer_ms_per_row"] = float(infer_ms)
 
-                logger.info(f"Metrics for {name}: {metrics}")
+                logger.info(f"Metrics for {model_name}: {metrics}")
 
-                results[name] = metrics
+                results[model_name] = metrics
 
                 # --- Log child run assets ---
-                mlflow.log_params(est.get_params())
+                mlflow.log_params(params)
                 mlflow.log_metrics(metrics)
 
                 # Residuals
-                resid_path = Path(settings.ARTIFACT_DIR, f"residuals_{name}.png")
+                resid_path = Path(settings.ARTIFACT_DIR, f"residuals_{model_name}.png")
                 _log_residuals_plot(pipe, X_train, y_train, X_test, y_test, resid_path)
-                mlflow.log_artifact(str(resid_path), artifact_path=f"plots/{name}")
+                mlflow.log_artifact(str(resid_path), artifact_path=f"plots/{model_name}")
 
                 # y_true vs y_pred (quick bias check)
                 plt.figure()
@@ -177,10 +175,10 @@ def train_and_compare(
                 plt.xlabel("Ground Truth (y_true)")
                 plt.ylabel("Predictions (y_pred)")
                 plt.tight_layout()
-                yp_path = Path(settings.ARTIFACT_DIR, f"y_true_vs_pred_{name}.png")
+                yp_path = Path(settings.ARTIFACT_DIR, f"y_true_vs_pred_{model_name}.png")
                 plt.savefig(yp_path)
                 plt.close()
-                mlflow.log_artifact(str(yp_path), artifact_path=f"plots/{name}")
+                mlflow.log_artifact(str(yp_path), artifact_path=f"plots/{model_name}")
 
                 signature_example = X_train.iloc[:10]
                 signature_out = pipe.predict(signature_example)
@@ -188,16 +186,16 @@ def train_and_compare(
                 signature = infer_signature(signature_example, signature_out)
                 # log model
                 mlflow.sklearn.log_model(
-                    pipe, name=f"model_{name}", signature=signature, input_example=signature_example
+                    pipe, name=f"model_{model_name}", signature=signature, input_example=signature_example
                 )
 
         # ---- Parent-level comparison artifacts ----
-        # 1) Existing CV RMSE boxplot
+        # Existing CV RMSE boxplot
         cmp_path = Path(settings.ARTIFACT_DIR, "cv_rmse_comparison.png")
         _boxplot_cv_rmse(cv_rmse_all, labels, cmp_path)
         mlflow.log_artifact(str(cmp_path), artifact_path="plots/comparison")
 
-        # 2) Leaderboard CSV/JSON (sorted by CV_RMSE_mean)
+        # Leaderboard CSV/JSON (sorted by CV_RMSE_mean)
         # generate leaderboard DataFrame
         leaderboard = (
             pd.DataFrame.from_dict(results, orient="index")
@@ -216,15 +214,15 @@ def train_and_compare(
         mlflow.log_artifact(str(lb_csv), artifact_path="tables")
         mlflow.log_artifact(str(lb_json), artifact_path="tables")
 
-        # 3) Simple bar chart for CV_RMSE_mean
-        # plt.bar(leaderboard["model"], leaderboard["CV_RMSE_mean"])
-        # plt.ylabel("CV RMSE mean (lower is better)")
-        # plt.xticks(rotation=30, ha="right")
-        # plt.tight_layout()
-        # bar_path = Path(settings.ARTIFACT_DIR, "cv_rmse_mean_bar.png")
-        # plt.savefig(bar_path)
-        # plt.close()
-        # mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
+        # Simple bar chart for CV_RMSE_mean
+        plt.bar(leaderboard["model"], leaderboard["CV_RMSE_mean"])
+        plt.ylabel("CV RMSE mean (lower is better)")
+        plt.xticks(rotation=30, ha="right")
+        plt.tight_layout()
+        bar_path = Path(settings.ARTIFACT_DIR, "cv_rmse_mean_bar.png")
+        plt.savefig(bar_path)
+        plt.close()
+        mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
 
         means = leaderboard["CV_RMSE_mean"].values
         stds = leaderboard["CV_RMSE_std"].values
@@ -238,11 +236,11 @@ def train_and_compare(
         plt.close()
         mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
 
-        # 4) Raw CV arrays (re-plot later if needed)
+        # Raw CV arrays (re-plot later if needed)
         cv_dump = {lbl: arr.tolist() for lbl, arr in zip(labels, cv_rmse_all, strict=False)}
         mlflow.log_dict(cv_dump, artifact_file="cv_rmse_raw.json")
 
-        # 5) Tag best model on the parent run
+        # Tag best model on the parent run
         best_row = leaderboard.iloc[0]
         mlflow.set_tags(
             {
@@ -256,21 +254,21 @@ def train_and_compare(
         if registered_best_model:
             # Register the child-run artifact "model_<name>" from the best child run.
             # Since we’re in the parent run, we reconstruct the path as a run-relative URI.
-            best_name = str(best_row["model"])
-            logger.info(f"Best model: {best_name}")
+            best_model_name = str(best_row["model"])
+            logger.info(f"Best model: {best_model_name}")
             # Find the child run with that name among the active run’s children
             # If you already know the run_id, you can pass it directly.
             try:
                 client = mlflow.tracking.MlflowClient()
                 children = client.search_runs(
                     experiment_ids=[parent_run.info.experiment_id],
-                    filter_string=f"tags.mlflow.parentRunId = '{parent_run.info.run_id}' and attributes.run_name = '{best_name}'",
+                    filter_string=f"tags.mlflow.parentRunId = '{parent_run.info.run_id}' and attributes.run_name = '{best_model_name}'",
                     max_results=1,
                 )
                 logger.info(f"Found {len(children)} runs")
                 if children:
                     child_run_id = children[0].info.run_id
-                    model_uri = f"runs:/{child_run_id}/model_{best_name}"
+                    model_uri = f"runs:/{child_run_id}/model_{best_model_name}"
                     mlflow.register_model(model_uri, name=registered_best_model)
             except Exception:
                 logger.exception("Failed to register the best model")
