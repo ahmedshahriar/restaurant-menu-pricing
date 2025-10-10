@@ -11,11 +11,11 @@ import pandas as pd
 from loguru import logger
 from mlflow.models import infer_signature
 from sklearn.compose import ColumnTransformer
-from sklearn.model_selection import KFold, cross_val_score
 from sklearn.pipeline import Pipeline
 
 from core.settings import settings
 
+from . import evaluate_model
 from .specs import get_model_spec
 
 
@@ -162,9 +162,10 @@ def tune_model(
                 # model = XGBRegressor(**params)
                 pipe = Pipeline([("preprocessor", preprocessor), ("model", model)])
 
-                cv = KFold(n_splits=cv_folds, shuffle=True, random_state=settings.SEED)
                 t0 = time.perf_counter()
-                scores = cross_val_score(pipe, X_train, y_train, cv=cv, scoring=scoring_criterion)
+                scores = evaluate_model(
+                    n_folds=cv_folds, model=pipe, X=X_train, y=y_train, scoring_criterion=scoring_criterion
+                )
                 fit_time = time.perf_counter() - t0
 
                 # scores are NEGATIVE MSE -> objective is POSITIVE MSE
@@ -178,7 +179,7 @@ def tune_model(
                 mlflow.log_metric("cv_mse_mean", -cv_mean_neg)
                 mlflow.log_metric("cv_mse_std", cv_std)
                 mlflow.log_metric("cv_rmse", rmse)
-                mlflow.log_metric("n_splits", cv.get_n_splits(X_train, y_train))
+                mlflow.log_metric("n_splits", cv_folds)
                 mlflow.log_metric("trial_fit_time_sec", fit_time)
 
                 # Log the trained pipeline for this trial with a proper signature.
@@ -222,7 +223,7 @@ def tune_model(
 
         # Initialize the Optuna study
         study = optuna.create_study(direction="minimize")
-        study.optimize(objective, n_trials=n_trials, callbacks=[champion_callback])
+        study.optimize(objective, n_trials=n_trials, show_progress_bar=True, callbacks=[champion_callback])
 
         # ----- Parent-level logging -----
         # Best params & metrics

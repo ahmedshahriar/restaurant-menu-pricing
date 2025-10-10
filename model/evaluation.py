@@ -6,14 +6,15 @@ from sklearn.pipeline import Pipeline
 from core.settings import settings
 
 
-def evaluate_model(model: Pipeline, X: pd.DataFrame, y: pd.Series) -> np.ndarray:
-    n_folds = 5
-    kf = KFold(n_folds, shuffle=True, random_state=settings.SEED).get_n_splits(X.values)
+def evaluate_model(n_folds: int, model: Pipeline, X: pd.DataFrame, y: pd.Series, scoring_criterion: str) -> np.ndarray:
+    # todo add more scoring options
+    """Evaluate a model using K-Fold cross-validation and return the scores."""
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=settings.SEED)
     scores = cross_val_score(
         model,
         X,
         y,
-        scoring="neg_mean_squared_error",
+        scoring=scoring_criterion,
         cv=kf,
         n_jobs=-1,
         error_score="raise",

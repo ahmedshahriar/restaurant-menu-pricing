@@ -11,14 +11,14 @@ from matplotlib import pyplot as plt
 from mlflow.models import infer_signature
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
-from sklearn.model_selection import KFold, cross_val_score
 from sklearn.pipeline import Pipeline
+from tqdm.auto import tqdm
 from yellowbrick.regressor import ResidualsPlot
 
 # --- App bootstrap & settings ---
 from application.config.bootstrap import apply_global_settings
 from core.settings import settings
-from model import get_model_spec
+from model import evaluate_model, get_model_spec
 
 apply_global_settings()
 
@@ -75,9 +75,10 @@ def train_and_compare(
     y_test: pd.Series,
     preprocessor: ColumnTransformer,
     cv_folds: int = 5,
+    scoring_criterion: str = "neg_mean_squared_error",
     parent_run_name: str = "model-comparison",
-    registered_best_model: str | None = None,  # e.g., "ubereats-price-regressor"
-) -> dict[str, dict[str, float]]:
+    best_model_registry_name: str | None = None,  # e.g., "ubereats-price-regressor"
+) -> tuple[dict[str, dict[str, float]], str, str]:
     """
     Train & compare models using provided estimators+params (fixed or tuned).
     - Child runs: params, metrics, model, residuals plot per model.
@@ -86,6 +87,7 @@ def train_and_compare(
     results: dict[str, dict[str, float]] = {}  # model name → metrics
     cv_rmse_all: list[np.ndarray] = []
     labels: list[str] = []
+    model_uri, best_model_name = None, None
 
     with mlflow.start_run(run_name=parent_run_name) as parent_run:
         # ---- Parent context logs (simple, useful) ----
@@ -107,9 +109,7 @@ def train_and_compare(
         # CV strategy snapshot
         mlflow.log_dict({"n_splits": cv_folds, "shuffle": True, "random_state": settings.SEED}, "context/cv.json")
 
-        kf = KFold(n_splits=cv_folds, shuffle=True, random_state=settings.SEED)
-
-        for model_name, params in models_with_params.items():
+        for model_name, params in tqdm(models_with_params.items()):
             with mlflow.start_run(run_name=model_name, nested=True):
                 # clone to ensure a fresh estimator for each run
                 spec = get_model_spec(model_name)
@@ -120,14 +120,8 @@ def train_and_compare(
                 logger.info(f"Fitting {model_name} model with params: {params}")
 
                 # --- CV RMSE on the whole pipeline ---
-                cv_scores = cross_val_score(
-                    pipe,
-                    X_train,
-                    y_train,
-                    scoring="neg_mean_squared_error",
-                    cv=kf,
-                    n_jobs=-1,
-                    error_score="raise",
+                cv_scores = evaluate_model(
+                    n_folds=cv_folds, model=pipe, X=X_train, y=y_train, scoring_criterion=scoring_criterion
                 )
                 cv_rmse = np.sqrt(-cv_scores)
                 cv_rmse_all.append(cv_rmse)
@@ -251,7 +245,7 @@ def train_and_compare(
         )
 
         # ---- register the best model from the comparison ----
-        if registered_best_model:
+        if best_model_registry_name:
             # Register the child-run artifact "model_<name>" from the best child run.
             # Since we’re in the parent run, we reconstruct the path as a run-relative URI.
             best_model_name = str(best_row["model"])
@@ -265,14 +259,29 @@ def train_and_compare(
                     filter_string=f"tags.mlflow.parentRunId = '{parent_run.info.run_id}' and attributes.run_name = '{best_model_name}'",
                     max_results=1,
                 )
-                logger.info(f"Found {len(children)} runs")
-                if children:
+                logger.info(f"Found {len(children)} run(s) for {best_model_name}")
+                if not children:
+                    logger.warning("No matching child run found. Nothing to register.")
+                else:
                     child_run_id = children[0].info.run_id
                     model_uri = f"runs:/{child_run_id}/model_{best_model_name}"
-                    mlflow.register_model(model_uri, name=registered_best_model)
+                    model_version = mlflow.register_model(model_uri, name=best_model_registry_name)
+                    client.set_registered_model_tag(
+                        name=best_model_registry_name,
+                        key="problem_type",
+                        value="regression",
+                    )
+                    client.set_registered_model_tag(name=best_model_registry_name, key="dataset", value="ubereats")
+                    client.set_registered_model_tag(
+                        name=best_model_registry_name, key="model_type", value=best_model_name
+                    )
+                    client.set_registered_model_alias(
+                        name=best_model_registry_name, alias="champion", version=model_version.version
+                    )
+                    logger.info(f"Registered the best model {best_model_name} as '{best_model_registry_name}'")
             except Exception:
                 logger.exception("Failed to register the best model")
                 # Non-fatal: leave registration best-effort
                 pass
 
-    return results
+    return results, best_model_name, model_uri
