@@ -1,5 +1,5 @@
 from .evaluation import evaluate_model
-from .specs import get_model_spec
+from .specs import REGISTRY, get_model_spec
 from .training import train_and_compare
 from .tuning import tune_model
 
@@ -8,4 +8,5 @@ __all__ = [
     "tune_model",
     "evaluate_model",
     "get_model_spec",
+    "REGISTRY",
 ]
