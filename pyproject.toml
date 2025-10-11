@@ -65,6 +65,10 @@ fixable = ["ALL"]
 [tool.ruff.lint.isort]
 known-first-party = ["application", "core"]
 
+# ----------------------------------
+# --- Poe the Poet Configuration ---
+# ----------------------------------
+
 [tool.poe.tasks]
 hello = "echo 'Hello from Poe the Poet 👋'"
 
@@ -72,6 +76,17 @@ lint-check = "poetry run ruff check ."
 format-check = "poetry run ruff format --check ."
 lint-fix = "poetry run ruff check --fix ."
 format-fix = "poetry run ruff format ."
+
+# Full ML pipeline: tune all models, compare, and register best one
+[tool.poe.tasks.run-pipeline]
+cmd = "dotenv run -- python -m tools.run"
+help = "Run the full pipeline (tune all models, train, compare, and register the best model)"
+
+# Quick dry run to preview the execution plan (no training)
+[tool.poe.tasks.run-dry]
+cmd = "dotenv run -- python -m tools.run --dry-run"
+help = "Show the planned models and config without executing training"
+
 
 [tool.poe.tasks.test]
 cmd = "poetry run pytest tests/"

@@ -16,8 +16,11 @@ class ModelSchema:
     numeric: tuple[str, ...] = ("cost_of_living_index", "density")
     categorical: tuple[str, ...] = ("category", "price_range", "state_id")
     text: tuple[str, ...] = ("ingredients",)
-    target: str = settings.TARGET  # Target variable for prediction
-    data_split_col: str = settings.DATA_SPLIT_COL  # Column used for stratified splitting (or data split flag)
+    target: str = getattr(
+        settings, "TARGET", "price"
+    )  # Target variable for prediction # Target variable for prediction
+    # Column used for stratified splitting (or data split flag)
+    data_split_col: str = settings.DATA_SPLIT_COL or "category"
 
     # -------------------------------------------------------------------------
     # Derived helpers
