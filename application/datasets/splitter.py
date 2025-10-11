@@ -6,7 +6,9 @@ from application.preprocessing import DATA_SPLIT_COL, TARGET_COL
 from core.settings import settings
 
 
-def split_data(df: pd.DataFrame, test_size: float = 0.2) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+def split_data(
+    df: pd.DataFrame, test_size: float = settings.TEST_SIZE
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """
     Split the dataset into stratified train and test sets based on the 'category' column.
 
@@ -16,8 +18,6 @@ def split_data(df: pd.DataFrame, test_size: float = 0.2) -> tuple[pd.DataFrame, 
         Input dataframe containing features and 'price' target.
     test_size : float, optional
         Fraction of data to reserve for testing, by default 0.2.
-    random_state : int, optional
-        Random seed for reproducibility, by default 33.
 
     Returns
     -------
@@ -38,7 +38,7 @@ def split_data(df: pd.DataFrame, test_size: float = 0.2) -> tuple[pd.DataFrame, 
     y_test = strat_test_set[TARGET_COL]
 
     # Log split shapes
-    logger.info(f"Data split: {len(df)} rows, train:test = {1 - test_size:.0}:{test_size:.0}")
+    logger.info(f"Data split: {len(df)} rows, train:test = {1 - test_size:.0f}:{test_size:.0f}")
     logger.info(f"Shape --> X_train: {X_train.shape}, y_train: {y_train.shape}")
     logger.info(f"Shape --> X_test: {X_test.shape}, y_test: {y_test.shape}")
 

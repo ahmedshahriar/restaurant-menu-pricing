@@ -37,6 +37,7 @@ package-mode = false
 ruff = "0.13.3"
 pytest = "8.4.2"
 pre-commit = "4.3.0"
+python-dotenv = "^1.1.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
