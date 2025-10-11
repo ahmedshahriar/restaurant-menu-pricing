@@ -7,7 +7,7 @@ from core.settings import settings
 
 
 def split_data(
-    df: pd.DataFrame, test_size: float = settings.TEST_SIZE
+    df: pd.DataFrame, test_size: float = settings.TEST_SIZE if settings.TEST_SIZE else 0.2
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """
     Split the dataset into stratified train and test sets based on the 'category' column.

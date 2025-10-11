@@ -1,5 +1,6 @@
+from model.registry import REGISTRY, get_model_spec
+
 from .evaluation import evaluate_model
-from .specs import REGISTRY, get_model_spec
 from .train import train_and_compare
 from .tune import tune_model
 

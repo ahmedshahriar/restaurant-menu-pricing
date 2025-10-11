@@ -41,6 +41,17 @@ def _validate_model_names(_: click.Context, __: click.Option, value: str | None)
     return parts
 
 
+def _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name):
+    click.echo(
+        "Plan:\n"
+        f"  Models: {models}\n"
+        f"  Data path: {data_path or '<settings default>'}\n"
+        f"  Optuna trials: {n_trials}, CV folds: {cv_folds}\n"
+        f"  Scoring criterion: {scoring}\n"
+        f"  Best model registry name: {best_model_registry_name}\n"
+    )
+
+
 @click.command(
     help=HELP_TEXT,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -139,20 +150,14 @@ def main(
 
     # dry-run: just show the plan and exit
     if dry_run:
-        click.echo(
-            "Plan:\n"
-            f"  Models: {models}\n"
-            f"  Data path: {data_path or '<settings default>'}\n"
-            f"  Trials: {n_trials}, CV folds: {cv_folds}\n"
-            f"  Scoring: {scoring}\n"
-            f"  Registry name: {best_model_registry_name}\n"
-        )
+        _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name)
         raise SystemExit(0)
 
     # `models` is already a list of validated names
     logger.info(f"Running pipeline for models: {models}")
 
     try:
+        _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name)
         result = autotune_pipeline(
             model_names=models,
             data_path=data_path,

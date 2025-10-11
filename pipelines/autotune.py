@@ -27,6 +27,10 @@ def autotune_pipeline(
 
     tuned_models = {}
     for model_name in model_names:
+        if model_name == "lr":
+            logger.info(f"Skipping tuning for {model_name}, using default params.")
+            tuned_models[model_name] = {}  # or your default params if any
+            continue
         logger.info(f"Starting tuning for {model_name}")
         best_params, best_metric = tune_model(
             X_train,

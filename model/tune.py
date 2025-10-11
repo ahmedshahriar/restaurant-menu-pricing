@@ -14,9 +14,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
 from core.settings import settings
+from model.registry import get_model_spec
 
 from . import evaluate_model
-from .specs import get_model_spec
 
 
 def _pred_vs_true_figure(y_true: pd.Series, y_pred: np.ndarray, title: str = "Predicted vs True"):

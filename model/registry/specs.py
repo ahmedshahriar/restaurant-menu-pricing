@@ -54,7 +54,6 @@ RIDGE_REG = ModelSpec(
     name="ridge",
     estimator_cls=Ridge,
     base_kwargs={
-        "n_jobs": -1,
         "random_state": settings.SEED,
     },
     param_space=lambda trial: {
@@ -66,7 +65,6 @@ LASSO_REG = ModelSpec(
     name="lasso",
     estimator_cls=Lasso,
     base_kwargs={
-        "n_jobs": -1,
         "random_state": settings.SEED,
     },
     param_space=lambda trial: {
