@@ -11,7 +11,7 @@ application/datasets/generation.py
 application/networks
 application/utils
 backups/pythonhasseed-issue.md
-pipelines
+pipelines/run.py
 
 # IDE
 .idea

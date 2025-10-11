@@ -7,7 +7,8 @@ from core.settings import settings
 
 
 def evaluate_model(n_folds: int, model: Pipeline, X: pd.DataFrame, y: pd.Series, scoring_criterion: str) -> np.ndarray:
-    # TODO: Add support for additional scoring options such as 'f1', 'roc_auc', 'precision', and 'recall'.
+    # TODO: Add support for additional scoring options
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
     """Evaluate a model using K-Fold cross-validation and return the scores."""
     kf = KFold(n_splits=n_folds, shuffle=True, random_state=settings.SEED)
     scores = cross_val_score(

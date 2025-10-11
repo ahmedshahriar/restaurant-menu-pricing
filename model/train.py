@@ -16,11 +16,8 @@ from tqdm.auto import tqdm
 from yellowbrick.regressor import ResidualsPlot
 
 # --- App bootstrap & settings ---
-from application.config.bootstrap import apply_global_settings
 from core.settings import settings
 from model import evaluate_model, get_model_spec
-
-apply_global_settings()
 
 
 def _log_residuals_plot(
@@ -266,12 +263,13 @@ def train_and_compare(
                     child_run_id = children[0].info.run_id
                     model_uri = f"runs:/{child_run_id}/model_{best_model_name}"
                     model_version = mlflow.register_model(model_uri, name=best_model_registry_name)
+                    model_uri = mlflow.get_artifact_uri(best_model_registry_name)
+
                     client.set_registered_model_tag(
                         name=best_model_registry_name,
                         key="problem_type",
                         value="regression",
                     )
-                    client.set_registered_model_tag(name=best_model_registry_name, key="dataset", value="ubereats")
                     client.set_registered_model_tag(
                         name=best_model_registry_name, key="model_type", value=best_model_name
                     )

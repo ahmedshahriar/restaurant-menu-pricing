@@ -35,7 +35,7 @@ def apply_global_settings() -> None:
     # NOTE: PYTHONHASHSEED must be set before Python starts.
     hash_seed = os.environ.get("PYTHONHASHSEED")
     if hash_seed:
-        logger.debug("PYTHONHASHSEED=%s (set at process start)", hash_seed)
+        logger.debug(f"PYTHONHASHSEED={hash_seed} (set at process start)")
     else:
         logger.info("PYTHONHASHSEED not set at launch; hash randomization may be nondeterministic.")
 
@@ -74,7 +74,7 @@ def apply_global_settings() -> None:
     if settings.IGNORE_FUTURE_WARNINGS:
         warnings.filterwarnings("ignore", category=FutureWarning)
 
-    print(f"✅ Environment initialized with seed={settings.SEED}")
+    logger.info(f"Environment initialized with seed={settings.SEED}")
 
 
 # Optional: separate seeding helper to reuse it standalone
