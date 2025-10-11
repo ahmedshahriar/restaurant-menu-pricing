@@ -12,8 +12,21 @@ def build_preprocessor() -> ColumnTransformer:
     cat_tf = Pipeline([("onehot", OneHotEncoder(handle_unknown="ignore"))])
     text_tf = Pipeline(
         [
-            ("squeeze", FunctionTransformer(lambda x: x.squeeze())),
-            ("tfidf", TfidfVectorizer(analyzer="word", tokenizer=_dummy, preprocessor=_dummy, token_pattern=None)),
+            # Always return a Series (1 row => length-1 Series), no squeeze()
+            # best approach: preserve list-of-phrases as-is, no join (e.g., "chopped onions" stays intact)
+            ("pick_col", FunctionTransformer(lambda x: x.iloc[:, 0], validate=False)),
+            (
+                "tfidf",
+                TfidfVectorizer(
+                    analyzer="word",
+                    tokenizer=_dummy,  # pass list-of-phrases as-is
+                    preprocessor=_dummy,
+                    token_pattern=None,  # required when you provide your own tokenizer
+                    lowercase=False,  # optional: keep original casing if important
+                    ngram_range=(1, 2),  # unigrams + bigrams
+                    min_df=2,  # ignore very rare phrases
+                ),
+            ),
         ]
     )
     return ColumnTransformer(

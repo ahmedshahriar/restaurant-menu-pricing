@@ -6,28 +6,45 @@ authors = [{ name = "ahmedshahriar", email = "ahmed.shahriar.sakib@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [
-  "scrapy>=2.13.3,<3.0.0",
-  "scikit-learn>=1.7.2,<2.0.0",
-  "transformers>=4.56.2,<4.57.0", # broken metadata err v4.57.0 https://github.com/huggingface/transformers/issues/41331
-  "xgboost>=3.0.5,<4.0.0",
-  "pydantic>=2.11.10,<3.0.0",
-  "tensorflow-macos>=2.16.2,<3.0.0",
-  "tensorflow-metal>=1.2.0,<2.0.0",
-  "mlflow>=3.4.0,<4.0.0",
-  "torch>=2.8.0,<3.0.0",
-  "beautifulsoup4>=4.14.2,<5.0.0",
-  "seaborn>=0.13.2,<0.14.0",
-  "kagglehub>=0.3.13,<0.4.0",
-  "optuna>=4.5.0,<5.0.0",
-  "yellowbrick>=1.5,<2.0",
-  "scikeras[tensorflow]>=0.13.0,<0.14.0",
-  "loguru>=0.7.3,<0.8.0",
-  "pymongo>=4.15.2,<5.0.0",
-  "chompjs>=1.4.0,<2.0.0",
-  "optuna-integration[mlflow] (>=4.5.0,<5.0.0)",
-  "plotly (>=6.3.1,<7.0.0)",
-  "click (>=8.3.0,<9.0.0)",
-  "lightgbm (>=4.6.0,<5.0.0)",
+    # web crawling ETL dependencies
+    "scrapy>=2.13.3,<3.0.0",
+    "chompjs>=1.4.0,<2.0.0",
+    "beautifulsoup4>=4.14.2,<5.0.0",
+    "kagglehub>=0.3.13,<0.4.0",
+    "pymongo>=4.15.2,<5.0.0",
+
+    # machine learning dependencies
+    "scikit-learn>=1.7.2,<2.0.0",
+    "transformers>=4.56.2,<4.57.0", # broken metadata err v4.57.0 https://github.com/huggingface/transformers/issues/41331
+
+    # TensorFlow and PyTorch (with Metal support for Apple Silicon Macs (darwin))
+    "tensorflow-macos>=2.16.2,<3.0.0",
+    "tensorflow-metal>=1.2.0,<2.0.0",
+
+    "torch>=2.8.0,<3.0.0",
+    "xgboost>=3.0.5,<4.0.0",
+    "lightgbm (>=4.6.0,<5.0.0)",
+    "scikeras[tensorflow]>=0.13.0,<0.14.0",
+    "yellowbrick>=1.5,<2.0",
+    "optuna>=4.5.0,<5.0.0",
+
+    # MLflow and integrations
+    "mlflow>=3.4.0,<4.0.0",
+    "optuna-integration[mlflow] (>=4.5.0,<5.0.0)",
+
+    # CLI, logging, validation
+    "pydantic>=2.11.10,<3.0.0",
+    "click (>=8.3.0,<9.0.0)",
+    "loguru>=0.7.3,<0.8.0",
+
+    # visualization dependencies
+    "seaborn>=0.13.2,<0.14.0",
+    "plotly (>=6.3.1,<7.0.0)",
+
+    # Jupyter dependencies
+    "notebook (>=7.4.7,<8.0.0)",
+    "ipywidgets (>=8.1.7,<9.0.0)",
+    "jupyter (>=1.1.1,<2.0.0)",
 ]
 
 [tool.poetry]
@@ -77,16 +94,35 @@ format-check = "poetry run ruff format --check ."
 lint-fix = "poetry run ruff check --fix ."
 format-fix = "poetry run ruff format ."
 
-# Full ML pipeline: tune all models, compare, and register best one
-[tool.poe.tasks.run-pipeline]
-cmd = "dotenv run -- python -m tools.run"
-help = "Run the full pipeline (tune all models, train, compare, and register the best model)"
+# List all available models
+[tool.poe.tasks.run-models-list]
+cmd = "dotenv run -- python -m tools.run --list-models"
+help = "List all available models for training"
 
 # Quick dry run to preview the execution plan (no training)
 [tool.poe.tasks.run-dry]
 cmd = "dotenv run -- python -m tools.run --dry-run"
 help = "Show the planned models and config without executing training"
 
+# Train & tune a specific models (example: Decision Tree, XGBoost)
+[tool.poe.tasks.run-dtree-xgb]
+cmd = "dotenv run -- python -m tools.run --models 'dtree, xgboost'"
+help = "Run the pipeline for DecesionTree and XGBoost models only"
+
+# Full ML pipeline: tune all models, compare, and register best one
+[tool.poe.tasks.run-pipeline]
+cmd = "dotenv run -- python -m tools.run"
+help = "Run the full pipeline (tune all models, train, compare, and register the best model)"
+
+# Lightweight dev/test run with fewer trials/folds
+[tool.poe.tasks.run-pipeline-dev]
+cmd = "dotenv run -- python -m tools.run --n-trials 3 --cv-folds 2"
+help = "Quick development run with minimal Optuna trials and CV folds"
+
+# Full production run with heavier tuning
+[tool.poe.tasks.run-pipeline-prod]
+cmd = "dotenv run -- python -m tools.run --n-trials 50 --cv-folds 5"
+help = "Full production-grade run with more trials and folds"
 
 [tool.poe.tasks.test]
 cmd = "poetry run pytest tests/"

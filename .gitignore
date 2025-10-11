@@ -12,6 +12,7 @@ application/networks
 application/utils
 backups/pythonhasseed-issue.md
 pipelines/run.py
+model/inference
 
 # IDE
 .idea
@@ -248,3 +249,4 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+!/application/preprocessing/transformers.py
