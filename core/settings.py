@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     DATASET_SAMPLED_PATH: str | None = None
     DATASET_SAMPLED_WITH_EMBEDDINGS_PATH: str | None = None
 
+    # model training/tuning config
+    TARGET: str | None = None
+    DATA_SPLIT_COL: str | None = None
+    TEST_SIZE: float | None = None
+    N_TRIALS: int | None = None
+    CV_FOLDS: int | None = None
+    SCORING: str | None = None
+    BEST_MODEL_REGISTRY_NAME: str | None = None
+
     # artifacts directory
     ARTIFACT_DIR: str | None = None
 

@@ -74,7 +74,7 @@ def train_and_compare(
     cv_folds: int = 5,
     scoring_criterion: str = "neg_mean_squared_error",
     parent_run_name: str = "model-comparison",
-    best_model_registry_name: str | None = None,  # e.g., "ubereats-price-regressor"
+    best_model_registry_name: str | None = None,
 ) -> tuple[dict[str, dict[str, float]], str, str]:
     """
     Train & compare models using provided estimators+params (fixed or tuned).
@@ -263,7 +263,6 @@ def train_and_compare(
                     child_run_id = children[0].info.run_id
                     model_uri = f"runs:/{child_run_id}/model_{best_model_name}"
                     model_version = mlflow.register_model(model_uri, name=best_model_registry_name)
-                    model_uri = mlflow.get_artifact_uri(best_model_registry_name)
 
                     client.set_registered_model_tag(
                         name=best_model_registry_name,

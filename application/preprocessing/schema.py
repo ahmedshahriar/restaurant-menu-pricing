@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from core import settings
+
 
 @dataclass(frozen=True)
 class ModelSchema:
@@ -14,8 +16,8 @@ class ModelSchema:
     numeric: tuple[str, ...] = ("cost_of_living_index", "density")
     categorical: tuple[str, ...] = ("category", "price_range", "state_id")
     text: tuple[str, ...] = ("ingredients",)
-    target: str = "price"  # Target variable for prediction
-    data_split_col: str = "category"  # Column used for stratified splitting (or data split flag)
+    target: str = settings.TARGET  # Target variable for prediction
+    data_split_col: str = settings.DATA_SPLIT_COL  # Column used for stratified splitting (or data split flag)
 
     # -------------------------------------------------------------------------
     # Derived helpers
