@@ -38,12 +38,12 @@ def split_data(df: pd.DataFrame, test_size: float = 0.2) -> tuple[pd.DataFrame, 
     y_test = strat_test_set[TARGET_COL]
 
     # Log split shapes
-    logger.info(f"Data split: {len(df)} rows, train:test = {1 - test_size:.0%}:{test_size:.0%}")
-    logger.info(f"X_train: {X_train.shape}, y_train: {y_train.shape}")
-    logger.info(f"X_test: {X_test.shape}, y_test: {y_test.shape}")
+    logger.info(f"Data split: {len(df)} rows, train:test = {1 - test_size:.0}:{test_size:.0}")
+    logger.info(f"Shape --> X_train: {X_train.shape}, y_train: {y_train.shape}")
+    logger.info(f"Shape --> X_test: {X_test.shape}, y_test: {y_test.shape}")
 
     # Log stratification distribution
-    logger.info(f"Train category distribution:\n{strat_train_set['category'].value_counts(normalize=True)}")
-    logger.info(f"Test category distribution:\n{strat_test_set['category'].value_counts(normalize=True)}")
+    logger.info(f"Train category distribution:\n{strat_train_set['category'].value_counts(normalize=True).round(2)}")
+    logger.info(f"Test category distribution:\n{strat_test_set['category'].value_counts(normalize=True).round(2)}")
 
     return X_train, X_test, y_train, y_test

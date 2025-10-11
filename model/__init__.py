@@ -1,7 +1,7 @@
 from .evaluation import evaluate_model
 from .specs import REGISTRY, get_model_spec
-from .training import train_and_compare
-from .tuning import tune_model
+from .train import train_and_compare
+from .tune import tune_model
 
 __all__ = [
     "train_and_compare",
