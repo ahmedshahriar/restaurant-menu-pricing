@@ -48,5 +48,8 @@ class Settings(BaseSettings):
     # artifacts directory
     ARTIFACT_DIR: str | None = None
 
+    # model serving
+    MODEL_SERVE_PORT: int = 5000
+
 
 settings = Settings()

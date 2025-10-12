@@ -133,6 +133,11 @@ def main(
     # apply global settings (seed, matplotlib, warnings)
     apply_global_settings()
 
+    # dry-run: just show the plan and exit
+    if dry_run:
+        _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name)
+        raise SystemExit(0)
+
     # Setup mlflow
     mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
     mlflow.set_experiment(settings.MLFLOW_EXPERIMENT_NAME)
@@ -146,11 +151,6 @@ def main(
     # quick list-and-exit
     if list_models:
         click.echo("Available models:\n  " + "\n  ".join(sorted(REGISTRY.keys())))
-        raise SystemExit(0)
-
-    # dry-run: just show the plan and exit
-    if dry_run:
-        _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name)
         raise SystemExit(0)
 
     # `models` is already a list of validated names

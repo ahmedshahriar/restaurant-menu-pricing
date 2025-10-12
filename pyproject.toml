@@ -32,6 +32,10 @@ dependencies = [
     "mlflow>=3.4.0,<4.0.0",
     "optuna-integration[mlflow] (>=4.5.0,<5.0.0)",
 
+    # mlflow serve dependencies
+    "virtualenv (>=20.35.3,<21.0.0)",
+    "fastapi (>=0.119.0,<0.120.0)",
+
     # CLI, logging, validation
     "pydantic>=2.11.10,<3.0.0",
     "click (>=8.3.0,<9.0.0)",
@@ -94,34 +98,70 @@ format-check = "poetry run ruff format --check ."
 lint-fix = "poetry run ruff check --fix ."
 format-fix = "poetry run ruff format ."
 
+serve-model-local = "poetry run python -m tools.serve --port 5000"
+call-inference = '''
+curl http://127.0.0.1:5000/invocations -H "Content-Type: application/json" --data
+  '{
+    "dataframe_split": {
+      "columns": [
+        "price_range",
+        "state_id",
+        "city",
+        "density",
+        "category",
+        "ingredients",
+        "cost_of_living_index"
+      ],
+      "data": [[
+        "cheap",
+        "Wisconsin",
+        "appleton",
+        1156,
+        "Sandwiches",
+        [
+          "cheddar cheese",
+          "applewood smoked bacon",
+          "tomato",
+          "lettuce",
+          "bun",
+          "maplebacon aioli",
+          "chicken breast"
+        ],
+        49.94
+      ]]
+    }
+  }'
+'''
+
+
 # List all available models
 [tool.poe.tasks.run-models-list]
-cmd = "dotenv run -- python -m tools.run --list-models"
+cmd = "dotenv run python -m tools.run --list-models"
 help = "List all available models for training"
 
 # Quick dry run to preview the execution plan (no training)
 [tool.poe.tasks.run-dry]
-cmd = "dotenv run -- python -m tools.run --dry-run"
+cmd = "dotenv run python -m tools.run --dry-run"
 help = "Show the planned models and config without executing training"
 
 # Train & tune a specific models (example: Decision Tree, XGBoost)
 [tool.poe.tasks.run-dtree-xgb]
-cmd = "dotenv run -- python -m tools.run --models 'dtree, xgboost'"
-help = "Run the pipeline for DecesionTree and XGBoost models only"
+cmd = "dotenv run python -m tools.run --models 'dtree, xgboost'"
+help = "Run the pipeline for DecisionTree and XGBoost models only"
 
 # Full ML pipeline: tune all models, compare, and register best one
 [tool.poe.tasks.run-pipeline]
-cmd = "dotenv run -- python -m tools.run"
+cmd = "dotenv run python -m tools.run"
 help = "Run the full pipeline (tune all models, train, compare, and register the best model)"
 
 # Lightweight dev/test run with fewer trials/folds
 [tool.poe.tasks.run-pipeline-dev]
-cmd = "dotenv run -- python -m tools.run --n-trials 3 --cv-folds 2"
+cmd = "dotenv run python -m tools.run --n-trials 3 --cv-folds 2"
 help = "Quick development run with minimal Optuna trials and CV folds"
 
 # Full production run with heavier tuning
 [tool.poe.tasks.run-pipeline-prod]
-cmd = "dotenv run -- python -m tools.run --n-trials 50 --cv-folds 5"
+cmd = "dotenv run python -m tools.run --n-trials 50 --cv-folds 5"
 help = "Full production-grade run with more trials and folds"
 
 [tool.poe.tasks.test]
