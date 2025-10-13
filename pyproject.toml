@@ -10,7 +10,6 @@ dependencies = [
     "scrapy>=2.13.3,<3.0.0",
     "chompjs>=1.4.0,<2.0.0",
     "beautifulsoup4>=4.14.2,<5.0.0",
-    "lxml (>=6.0.2,<7.0.0)",
     "kagglehub>=0.3.13,<0.4.0",
     "pymongo>=4.15.2,<5.0.0",
 
@@ -41,6 +40,7 @@ dependencies = [
     "pydantic>=2.11.10,<3.0.0",
     "click (>=8.3.0,<9.0.0)",
     "loguru>=0.7.3,<0.8.0",
+    "tqdm (>=4.67.1,<5.0.0)",
 
     # visualization dependencies
     "seaborn>=0.13.2,<0.14.0",

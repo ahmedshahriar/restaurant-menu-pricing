@@ -123,7 +123,7 @@ def _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_regis
 def main(
     models: list[str],
     list_models: bool,
-    data_path: str | None,
+    data_sampled_path: str | None,
     n_trials: int,
     cv_folds: int,
     scoring: str,
@@ -135,14 +135,14 @@ def main(
 
     # dry-run: just show the plan and exit
     if dry_run:
-        _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name)
+        _print_plan(models, data_sampled_path, n_trials, cv_folds, scoring, best_model_registry_name)
         raise SystemExit(0)
 
     # Setup mlflow
     mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
     mlflow.set_experiment(settings.MLFLOW_EXPERIMENT_NAME)
 
-    data_path = data_path or settings.DATASET_SAMPLED_PATH
+    data_sampled_path = data_sampled_path or settings.DATASET_SAMPLED_PATH
     n_trials = n_trials or settings.N_TRIALS
     cv_folds = cv_folds or settings.CV_FOLDS
     scoring = scoring or settings.SCORING
@@ -157,10 +157,10 @@ def main(
     logger.info(f"Running pipeline for models: {models}")
 
     try:
-        _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name)
+        _print_plan(models, data_sampled_path, n_trials, cv_folds, scoring, best_model_registry_name)
         result = autotune_pipeline(
             model_names=models,
-            data_path=data_path,
+            data_path=data_sampled_path,
             n_trials=n_trials,
             cv_folds=cv_folds,
             scoring=scoring,

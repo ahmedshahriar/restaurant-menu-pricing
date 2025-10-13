@@ -33,8 +33,31 @@ class Settings(BaseSettings):
     DATABASE_COLLECTION: str | None = None
 
     # dataset paths
+    # generated featured dataset path
+    FINAL_FEATURED_DATA_SAMPLE: str | None = None
+
+    # after feature engineering and cleaning
     DATASET_SAMPLED_PATH: str | None = None
     DATASET_SAMPLED_WITH_EMBEDDINGS_PATH: str | None = None
+
+    # kaggle datasets
+    # cost of living index by city
+    INDEX_DS: str | None = None
+    INDEX_FILE: str | None = None
+
+    # us cities database with lat/long info
+    DENSITY_DS: str | None = None
+    DENSITY_FILE: str | None = None
+
+    # used to build states_name_dict
+    STATES_DS: str | None = None
+    STATES_FILE: str | None = None
+
+    # cost of living index updated
+    COST_OF_INDEX_UPDATED_FILE: str | None = None
+
+    # Food NER Model
+    NER_MODEL: str | None = None
 
     # model training/tuning config
     TARGET: str | None = None

@@ -5,11 +5,15 @@
 
 # remove later
 data/
+datasets
 readme-demo.md
 
+application/dataset/density.py
+application/dataset/enrich.py
+application/dataset/features.py
+application/dataset/selection.py
 application/dataset/generation.py
 application/dataset/cleaning.py
-application/dataset/config.py
 application/dataset/datasets/
 application/networks
 application/utils

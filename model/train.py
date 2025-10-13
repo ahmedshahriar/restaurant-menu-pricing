@@ -81,7 +81,7 @@ def train_and_compare(
     - Child runs: params, metrics, model, residuals plot per model.
     - Parent run: comparison artifacts (boxplot, leaderboard), context, and best model tag.
     """
-    results: dict[str, dict[str, float]] = {}  # model name → metrics
+    results: dict[str, dict[str, float]] = {}  # model name -> metrics
     cv_rmse_all: list[np.ndarray] = []
     labels: list[str] = []
     model_uri, best_model_name = None, None
