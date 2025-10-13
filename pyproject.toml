@@ -4,12 +4,13 @@ version = "0.1.0"
 description = "UberEats menu price prediction"
 authors = [{ name = "ahmedshahriar", email = "ahmed.shahriar.sakib@gmail.com" }]
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     # web crawling ETL dependencies
     "scrapy>=2.13.3,<3.0.0",
     "chompjs>=1.4.0,<2.0.0",
     "beautifulsoup4>=4.14.2,<5.0.0",
+    "lxml (>=6.0.2,<7.0.0)",
     "kagglehub>=0.3.13,<0.4.0",
     "pymongo>=4.15.2,<5.0.0",
 
@@ -133,7 +134,7 @@ curl http://127.0.0.1:5000/invocations -H "Content-Type: application/json" --dat
   }'
 '''
 
-
+# ML pipeline tasks
 # List all available models
 [tool.poe.tasks.run-models-list]
 cmd = "dotenv run python -m tools.run --list-models"
