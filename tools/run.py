@@ -5,6 +5,7 @@ import mlflow
 from loguru import logger
 
 from application.config import apply_global_settings
+from application.dataset import generate_sampled_featured_data
 from core import __version__, settings
 from model import REGISTRY
 from pipelines import autotune_pipeline
@@ -67,17 +68,24 @@ def _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_regis
     )
 
 
-@click.command(
+# @click.command(
+#     name="restaurant-menu-pricing-cli",
+#     help=HELP_TEXT,
+#     context_settings={"help_option_names": ["-h", "--help"]},
+#     no_args_is_help=False,
+#     epilog=(
+#         "EXAMPLES:\n\n"
+#         "python -m tools.run  # runs all models by default\n\n"
+#         "python -m tools.run --list-models  # list available models\n\n"
+#         "python -m tools.run --dry-run  # show the plan without running\n\n"
+#         "python -m tools.run --models dtree,xgboost --n-trials 5 --cv-folds 4\n\n"
+#     ),
+# )
+@click.group(
+    invoke_without_command=True,
     help=HELP_TEXT,
     context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=False,
-    epilog=(
-        "EXAMPLES:\n\n"
-        "python -m tools.run  # runs all models by default\n\n"
-        "python -m tools.run --list-models  # list available models\n\n"
-        "python -m tools.run --dry-run  # show the plan without running\n\n"
-        "python -m tools.run --models dtree,xgboost --n-trials 5 --cv-folds 4\n\n"
-    ),
 )
 @click.version_option(
     version=__version__, message="Restaurant Menu Pricing CLI v%(version)s", prog_name="Restaurant CLI"
@@ -135,7 +143,9 @@ def _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_regis
     envvar="BEST_MODEL_REGISTRY_NAME",
     help="Name under which best model is registered in Mlflow Model Registry.",
 )
-def main(
+@click.pass_context
+def cli(
+    ctx: click.Context,
     models: list[str],
     list_models: bool,
     sampled_data_path: str | None,
@@ -150,6 +160,10 @@ def main(
     cv_folds = cv_folds or settings.CV_FOLDS
     scoring = scoring or settings.SCORING
     best_model_registry_name = best_model_registry_name or settings.BEST_MODEL_REGISTRY_NAME
+
+    # If a subcommand is used, don't run default action
+    if ctx.invoked_subcommand:
+        return
 
     # dry-run: just show the plan and exit
     if dry_run:
@@ -187,5 +201,36 @@ def main(
             raise click.ClickException(str(e)) from e
 
 
+# --------------------------
+# New: simple no-arg generator command
+# --------------------------
+@cli.command("generate-train-sample")
+def generate():
+    """
+    Generates a sampled, feature-enriched training dataset from the data warehouse.
+
+    \b
+    - Output: {settings.FINAL_FEATURED_DATA_SAMPLE}
+    - Produces a cleaned, enriched subset of crawled restaurant data for model training.
+    - Includes NER-extracted ingredients, cost-of-living index, and location features (e.g., population density).
+    - Removes price outliers and normalizes price ranges into buckets.
+    - Requires internet access for NER model download on first run.
+
+    Sampling and filtering logic (to be made configurable):
+    - Focuses on top restaurant categories (e.g., Sandwiches, Salads, Wraps).
+    - Limits to top categories (e.g., 15) per city and top cities (e.g., 5) per state.
+    - Filters for top US states by restaurant count (e.g., TX, VA, WA, WI, UT).
+
+    """
+    try:
+        # apply global settings (seed, matplotlib, warnings)
+        apply_global_settings()
+        _ = generate_sampled_featured_data()
+        logger.info(f"Data generation complete -> {settings.FINAL_FEATURED_DATA_SAMPLE}")
+    except Exception as e:
+        logger.error(f"Data generation failed: {e}")
+        raise click.ClickException(str(e)) from e
+
+
 if __name__ == "__main__":
-    main()
+    cli()

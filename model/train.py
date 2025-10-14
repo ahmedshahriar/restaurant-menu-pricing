@@ -17,7 +17,8 @@ from yellowbrick.regressor import ResidualsPlot
 
 # --- App bootstrap & settings ---
 from core.settings import settings
-from model import evaluate_model, get_model_spec
+
+from . import evaluate_model, get_model_spec
 
 
 def _log_residuals_plot(

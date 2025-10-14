@@ -2,7 +2,7 @@ import json
 
 from loguru import logger
 
-from application.dataset import load_model_data, split_data
+from application.dataset.io import load_model_data, split_data
 from application.preprocessing import build_preprocessor
 from model import train_and_compare, tune_model
 
