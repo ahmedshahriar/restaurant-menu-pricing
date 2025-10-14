@@ -99,7 +99,18 @@ format-check = "poetry run ruff format --check ."
 lint-fix = "poetry run ruff check --fix ."
 format-fix = "poetry run ruff format ."
 
+# Web crawling ETL tasks
+# scrapy commands
+# crawl restaurant locations, categories, and URLs
+crawl-ubereats-categories = "poetry run scrapy crawl category_us"
+
+# crawl restaurant menus and item details
+crawl-ubereats = "poetry run scrapy crawl restaurant_us"
+
+# serve the trained model locally using MLflow
 serve-model-local = "poetry run python -m tools.serve --port 5000"
+
+# Example curl command to call the served model
 call-inference = '''
 curl http://127.0.0.1:5000/invocations -H "Content-Type: application/json" --data
   '{
@@ -135,25 +146,32 @@ curl http://127.0.0.1:5000/invocations -H "Content-Type: application/json" --dat
 '''
 
 # ML pipeline tasks
+[tool.poe.tasks.run-help]
+cmd  = "python -m tools.run --help"
+help = "Show help from the Restaurant Menu Pricing CLI (same as python -m tools.run -h)."
+
 # List all available models
-[tool.poe.tasks.run-models-list]
+[tool.poe.tasks.models]
 cmd = "dotenv run python -m tools.run --list-models"
 help = "List all available models for training"
 
 # Quick dry run to preview the execution plan (no training)
-[tool.poe.tasks.run-dry]
+[tool.poe.tasks.dry-run]
 cmd = "dotenv run python -m tools.run --dry-run"
 help = "Show the planned models and config without executing training"
 
-# Train & tune a specific models (example: Decision Tree, XGBoost)
-[tool.poe.tasks.run-dtree-xgb]
-cmd = "dotenv run python -m tools.run --models 'dtree, xgboost'"
-help = "Run the pipeline for DecisionTree and XGBoost models only"
-
+# Run the Restaurant CLI (forwards any flags to run.py)
 # Full ML pipeline: tune all models, compare, and register best one
 [tool.poe.tasks.run-pipeline]
-cmd = "dotenv run python -m tools.run"
-help = "Run the full pipeline (tune all models, train, compare, and register the best model)"
+cmd  = "dotenv run python -m tools.run"
+help = "Run the Restaurant Menu Pricing CLI"
+#help = "Run the full pipeline (tune all models, train, compare, and register the best model)"
+
+# Run pipeline for specific models provided as arguments
+[tool.poe.tasks.run-models]
+cmd = "dotenv run python -m tools.run --models \"${models}\""
+help = "Run the pipeline for specific models (e.g., poetry poe run-models lr,dtree or poetry poe run-models 'lr,dtree')"
+args = [{ name = "models", positional = true, help = "Comma-separated model names (e.g. lr,dtree,xgboost)" }]
 
 # Lightweight dev/test run with fewer trials/folds
 [tool.poe.tasks.run-pipeline-dev]

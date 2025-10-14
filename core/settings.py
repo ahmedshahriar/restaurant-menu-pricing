@@ -27,7 +27,10 @@ class Settings(BaseSettings):
     # huggingface token
     HUGGINGFACE_ACCESS_TOKEN: str | None = None
 
-    # MongoDB database
+    CRAWLED_TASK_DATA_PATH: str | None = None
+
+    # MongoDB database (DWH)
+    # alternative to S3 / Azure Blob Storage
     DATABASE_HOST: str | None = None
     DATABASE_NAME: str | None = None
     DATABASE_COLLECTION: str | None = None
@@ -37,8 +40,8 @@ class Settings(BaseSettings):
     FINAL_FEATURED_DATA_SAMPLE: str | None = None
 
     # after feature engineering and cleaning
-    DATASET_SAMPLED_PATH: str | None = None
-    DATASET_SAMPLED_WITH_EMBEDDINGS_PATH: str | None = None
+    SAMPLED_DATA_PATH: str | None = None
+    SAMPLED_DATA_WITH_EMBEDDINGS_PATH: str | None = None
 
     # kaggle datasets
     # cost of living index by city
@@ -53,8 +56,11 @@ class Settings(BaseSettings):
     STATES_DS: str | None = None
     STATES_FILE: str | None = None
 
-    # cost of living index updated
+    # cost of living index updated data path
     COST_OF_INDEX_UPDATED_FILE: str | None = None
+
+    # artifacts directory
+    ARTIFACT_DIR: str | None = None
 
     # Food NER Model
     NER_MODEL: str | None = None
@@ -66,10 +72,10 @@ class Settings(BaseSettings):
     N_TRIALS: int | None = None
     CV_FOLDS: int | None = None
     SCORING: str | None = None
-    BEST_MODEL_REGISTRY_NAME: str | None = None
 
-    # artifacts directory
-    ARTIFACT_DIR: str | None = None
+    # final best model registry name
+    # if set, the best model is registered under this name in MLflow Model Registry
+    BEST_MODEL_REGISTRY_NAME: str | None = None
 
     # model serving
     MODEL_SERVE_PORT: int = 5000
