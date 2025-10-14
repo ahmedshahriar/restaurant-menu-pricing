@@ -1,5 +1,4 @@
 import json
-import pathlib
 import re
 import time
 from json import JSONDecodeError
@@ -10,14 +9,17 @@ import pandas as pd
 import scrapy
 from bs4 import BeautifulSoup
 
+from core import settings
+
 
 class RestaurantSpiderUS(scrapy.Spider):
-    name = "res_us"
+    name = "restaurant_us"
     allowed_domains = ["ubereats.com"]
     handle_httpstatus_list = [403, 429]
     BASE_URL = "https://www.ubereats.com"
 
     # either use pipelines to store data in MongoDB or use feed export to store data in a json file
+    # example for jsonlines export:
     # custom_settings = {
     #     'FEED_URI': pathlib.Path('data') / 'restaurant_data.json',
     #     'FORMAT': 'jsonlines',
@@ -30,17 +32,13 @@ class RestaurantSpiderUS(scrapy.Spider):
     #     'FEED_EXPORT_ENCODING': 'utf-8',
     # }
 
-    # def start_requests(self):
-    #     url = 'https://www.ubereats.com/'
-    #     yield scrapy.Request(url=url, callback=self.begin_parse)
-
     def start_requests(self):
         """
         :return: requests
         """
         # read csv file for restaurant urls (https://www.ubereats.com/category/<location>/<category>)
         #
-        df = pd.read_csv(pathlib.Path("data") / "task-data.csv")
+        df = pd.read_csv(settings.CRAWLED_TASK_DATA_PATH)
         # df = df.head(1) # test with 1 row
         urls = df.url.values
         for url in urls:
@@ -101,35 +99,35 @@ class RestaurantSpiderUS(scrapy.Spider):
         try:
             json_normalized = chompjs.parse_js_object(json_data)
         except JSONDecodeError:
-            print("JSONDecodeError")
+            self.logger.error("JSONDecodeError")
         except Exception as e:
-            print("Exception: ", e)
+            self.logger.error("Exception: ", e)
 
         # option #2
         # try:
         #     json_data = json_data.replace('<script type="application/ld+json">', '').replace('</script>', '')
         # except Exception as e:
-        #     print(e)
+        #     self.logger.error(e)
         # json_normalized = dict()
         # try:
         #     json_normalized = unicodedata.normalize("NFKD", json_data.encode().decode('unicode_escape'))
         #     json_normalized = json.loads(json_normalized.replace('\r', '').replace('\n', ''))
         # except JSONDecodeError as e:
-        #     print(e)
+        #     self.logger.error(e)
 
         restaurant_dict = dict()
 
         try:
             restaurant_dict["task_id"] = response.request.meta["task_id"]
         except Exception as e:
-            print(e)
+            self.logger.error(e)
 
         restaurant_dict["url"] = response.url
 
         try:
             restaurant_dict["position"] = restaurant_pos_dict.get(response.url)
         except Exception as e:
-            print(e)
+            self.logger.error(e)
 
         try:
             restaurant_dict["name"] = json_normalized.get("name")
@@ -218,7 +216,7 @@ class RestaurantSpiderUS(scrapy.Spider):
 
                 restaurant_dict["menu_items"] = menu_items
             except Exception as e:
-                print("No menu items", e)
+                self.logger.error("No menu items", e)
         else:
             try:
                 element, json_data_backup, data_dict = None, None, None
@@ -234,17 +232,17 @@ class RestaurantSpiderUS(scrapy.Spider):
                     )
                     del scraped_js
                 except Exception as e:
-                    print("Failed to scrape items", e)
+                    self.logger.error("Failed to scrape items", e)
                 try:
                     json_data_backup = json.loads(element)
                     del element
                 except Exception as e:
-                    print("Failed to normalize json", e)
+                    self.logger.error("Failed to normalize json", e)
 
                 try:
                     data_dict = json_data_backup.get("stores")
                 except Exception as e:
-                    print("Failed to fetch json", e)
+                    self.logger.error("Failed to fetch json", e)
 
                 if len(data_dict.keys()) == 1:
                     uuid = list(data_dict.keys())[0]
@@ -282,7 +280,7 @@ class RestaurantSpiderUS(scrapy.Spider):
                             menu_items.append(d)
                     restaurant_dict["menu_items"] = menu_items
             except Exception as e:
-                print("No menu items", e)
+                self.logger.error("No menu items", e)
         restaurant_dict["ended_at"] = time.strftime("%d/%m/%Y %H:%M", time.localtime())
 
         yield restaurant_dict

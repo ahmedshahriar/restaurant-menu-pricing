@@ -19,6 +19,11 @@ try:
 except Exception:
     torch = None  # type: ignore
 
+try:
+    from tqdm.auto import tqdm
+except ImportError:
+    from tqdm import tqdm
+
 from core.settings import settings  # pydantic settings
 
 
@@ -30,6 +35,8 @@ def apply_global_settings() -> None:
       - warnings filtering
     Safe to call multiple times.
     """
+    # --- tqdm pandas integration ---
+    tqdm.pandas()
 
     # --- Reproducibility ---
     # NOTE: PYTHONHASHSEED must be set before Python starts.

@@ -10,16 +10,25 @@ from model import REGISTRY
 from pipelines import autotune_pipeline
 
 HELP_TEXT = f"""
-    Restaurant Menu Pricing Project CLI v{__version__}.
+Restaurant Menu Pricing CLI v{__version__}
 
-    Main entry point for the pipeline execution.
-    This entrypoint is where everything comes together.
+Runs the complete data and machine learning pipeline for restaurant price modeling.
 
-    Run the full training and hyperparameter tuning pipeline for selected models.
+\b
+This tool:
+- Crawls Uber Eats (USA) for restaurant and menu data
+- Stores raw and processed data in the data warehouse
+- Generates sampled datasets for model training
+- Preprocesses and transforms features
+- Performs hyperparameter tuning and model comparison
+- Registers and saves the best-performing model
 
-    \b
-    load -> split -> preprocess -> tune -> compare models -> register best model.
-    """
+\b
+Pipeline sequence:
+ETL crawl → data warehouse → sample → preprocess → tune → ML models compare → register
+"""
+
+MODEL_CHOICES = sorted(REGISTRY.keys())
 
 
 def _validate_model_names(_: click.Context, __: click.Option, value: str | None) -> list[str]:
@@ -30,14 +39,20 @@ def _validate_model_names(_: click.Context, __: click.Option, value: str | None)
     """
     if not value:
         # No models passed — default to all
-        return list(REGISTRY.keys())
+        return list(MODEL_CHOICES)
 
     # parse comma-separated
     parts = [m.strip() for m in value.split(",") if m.strip()]
-    invalid = [m for m in parts if m not in REGISTRY]
+    invalid = [m.strip() for m in parts if m not in REGISTRY]
     if invalid:
-        valid = ", ".join(sorted(REGISTRY.keys()))
+        valid = ", ".join(sorted(MODEL_CHOICES))
         raise click.BadParameter(f"Invalid model name(s): {invalid}. Valid models are: {valid}")
+    # require at least two models
+    if len(parts) < 2:
+        raise click.BadParameter(
+            "Please provide at least two models for comparison (e.g. poetry poe run-models lr,dtree)."
+        )
+
     return parts
 
 
@@ -68,22 +83,27 @@ def _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_regis
     version=__version__, message="Restaurant Menu Pricing CLI v%(version)s", prog_name="Restaurant CLI"
 )
 @click.option(
+    "--list-models",
+    is_flag=True,
+    help="List available model names and exit.",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Print the resolved plan (models/options) and exit without running.",
+)
+@click.option(
     "--models",
     callback=_validate_model_names,
     default=None,
     help=(
         "Comma-separated model names to run (e.g. 'lr,dtree,xgboost'). "
         "If omitted, all models in REGISTRY will be run. "
-        "\n\nValid values: " + ", ".join(sorted(REGISTRY.keys()))
+        "\n\nValid values: " + ", ".join(sorted(MODEL_CHOICES))
     ),
 )
 @click.option(
-    "--list-models",
-    is_flag=True,
-    help="List available model names and exit.",
-)
-@click.option(
-    "--data-path",
+    "--sampled-data-path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, path_type=str),
     default=None,
     envvar="DATA_PATH",
@@ -115,61 +135,56 @@ def _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_regis
     envvar="BEST_MODEL_REGISTRY_NAME",
     help="Name under which best model is registered in Mlflow Model Registry.",
 )
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Print the resolved plan (models/options) and exit without running.",
-)
 def main(
     models: list[str],
     list_models: bool,
-    data_path: str | None,
+    sampled_data_path: str | None,
     n_trials: int,
     cv_folds: int,
     scoring: str,
     best_model_registry_name: str,
     dry_run: bool,
 ) -> None:
-    # apply global settings (seed, matplotlib, warnings)
-    apply_global_settings()
-
-    # Setup mlflow
-    mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
-    mlflow.set_experiment(settings.MLFLOW_EXPERIMENT_NAME)
-
-    data_path = data_path or settings.DATASET_SAMPLED_PATH
+    sampled_data_path = sampled_data_path or settings.SAMPLED_DATA_PATH
     n_trials = n_trials or settings.N_TRIALS
     cv_folds = cv_folds or settings.CV_FOLDS
     scoring = scoring or settings.SCORING
     best_model_registry_name = best_model_registry_name or settings.BEST_MODEL_REGISTRY_NAME
 
-    # quick list-and-exit
-    if list_models:
-        click.echo("Available models:\n  " + "\n  ".join(sorted(REGISTRY.keys())))
-        raise SystemExit(0)
-
     # dry-run: just show the plan and exit
     if dry_run:
-        _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name)
+        _print_plan(models, sampled_data_path, n_trials, cv_folds, scoring, best_model_registry_name)
         raise SystemExit(0)
+    # quick list-and-exit
+    elif list_models:
+        click.echo("Available models:\n  " + "\n  ".join(sorted(MODEL_CHOICES)))
+        raise SystemExit(0)
+    else:
+        # apply global settings (seed, matplotlib, warnings)
+        apply_global_settings()
 
-    # `models` is already a list of validated names
-    logger.info(f"Running pipeline for models: {models}")
+        _print_plan(models, sampled_data_path, n_trials, cv_folds, scoring, best_model_registry_name)
+        # Setup mlflow
+        mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
+        mlflow.set_experiment(settings.MLFLOW_EXPERIMENT_NAME)
 
-    try:
-        _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_registry_name)
-        result = autotune_pipeline(
-            model_names=models,
-            data_path=data_path,
-            n_trials=n_trials,
-            cv_folds=cv_folds,
-            scoring=scoring,
-            best_model_registry_name=best_model_registry_name,
-        )
-        logger.info(f"Best model: {result['best_model_name']}")
-    except Exception as e:
-        # error and non-zero exit
-        raise click.ClickException(str(e)) from e
+        # `models` is already a list of validated names
+        logger.info(f"Running pipeline for models: {models}")
+
+        try:
+            _print_plan(models, sampled_data_path, n_trials, cv_folds, scoring, best_model_registry_name)
+            result = autotune_pipeline(
+                model_names=models,
+                data_path=sampled_data_path,
+                n_trials=n_trials,
+                cv_folds=cv_folds,
+                scoring=scoring,
+                best_model_registry_name=best_model_registry_name,
+            )
+            logger.info(f"Best model: {result['best_model_name']}")
+        except Exception as e:
+            # error and non-zero exit
+            raise click.ClickException(str(e)) from e
 
 
 if __name__ == "__main__":
