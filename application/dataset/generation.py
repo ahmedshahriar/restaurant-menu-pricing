@@ -88,8 +88,8 @@ def generate_sampled_featured_data(cfg: Config = _DEFAULT_CFG) -> pd.DataFrame:
 
     # Filter to selected states
     df_top_state = filter_to_top_states(df_res_density, cfg.top_states_filter)
-
-    states_name_dict = load_states_name_dict(df_states)  # retained side-effect
+    # generate states name dict
+    states_name_dict = load_states_name_dict(df_states)
 
     # Category/city selection
     df_res_ext, top_categories = compute_top_categories(df_menu_synced, df_top_state, cfg.top_categories_per_city)

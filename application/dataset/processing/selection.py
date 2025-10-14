@@ -30,7 +30,7 @@ def compute_top_categories(df_menu: pd.DataFrame, df_top_state_restaurants: pd.D
 
 def pick_top_cities(top_categories: pd.DataFrame, focus_categories: Iterable[str], top_cities_per_state: int):
     """Select the top cities per state based on the focus categories."""
-    logger.info("Selecting top cities per state for focus categories {}...", *focus_categories)
+    logger.info("Selecting top cities per state for focus categories {}...", ", ".join(focus_categories))
     top_filtered_categories = top_categories[top_categories.menu_category.isin(tuple(focus_categories))].copy()
     state_city_counts = top_filtered_categories.groupby(["state_id", "city"])["count"].sum().reset_index()
     state_city_counts = state_city_counts.sort_values(["state_id", "count"], ascending=[True, False])

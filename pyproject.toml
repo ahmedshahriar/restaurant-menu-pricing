@@ -108,7 +108,7 @@ crawl-ubereats-categories = "poetry run scrapy crawl category_us"
 crawl-ubereats = "poetry run scrapy crawl restaurant_us"
 
 # generate a sample training dataset from the crawled data (stored in Kaggle)
-generate-train-sample= "dotenv run python -m tools.run generate-train-sample"
+generate-train-sample = "dotenv run python -m tools.run generate-train-sample"
 
 # serve the trained model locally using MLflow
 serve-model-local = "poetry run python -m tools.serve --port 5000"
