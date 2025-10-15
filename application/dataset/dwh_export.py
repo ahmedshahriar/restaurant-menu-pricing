@@ -8,11 +8,12 @@ from pymongo.collection import Collection
 from tqdm import tqdm
 
 from core import settings
-from infrastructure.db import connection
+from infrastructure.db.mongo import get_client
 
 
 def get_collection() -> Collection:
-    db = connection.get_database(settings.DATABASE_NAME)
+    client = get_client()
+    db = client.get_database(settings.DATABASE_NAME)
     return db[settings.DATABASE_COLLECTION]
 
 

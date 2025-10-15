@@ -10,6 +10,9 @@ application/networks
 backups/pythonhasseed-issue.md
 model/inference
 
+# ignore model file
+menu-price-img/model_dir
+
 # IDE
 .idea
 .vscode

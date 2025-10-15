@@ -127,9 +127,11 @@ generate-train-sample = "dotenv run python -m tools.run generate-train-sample"
 # -------------------
 
 # serve the trained model locally using MLflow
+# change port number if needed
 serve-model-local = "poetry run python -m tools.serve --port 5000"
 
 # Example curl command to call the served model
+# change port number if needed
 call-inference = '''
 curl http://127.0.0.1:5000/invocations -H "Content-Type: application/json" --data
   '{
@@ -205,6 +207,10 @@ help = "Quick development run with minimal Optuna trials and CV folds"
 [tool.poe.tasks.run-pipeline-prod]
 cmd = "dotenv run python -m tools.run --n-trials 50 --cv-folds 5"
 help = "Full production-grade run with more trials and folds"
+
+# -------------
+# --- Tests ---
+# -------------
 
 [tool.poe.tasks.test]
 cmd = "poetry run pytest tests/"
