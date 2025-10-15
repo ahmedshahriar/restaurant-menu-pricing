@@ -42,4 +42,4 @@ class Config:
     NER_MODEL: str = settings.NER_MODEL
 
     # Output sampled final featured data
-    FINAL_FEATURED_DATA_SAMPLE: str = settings.FINAL_FEATURED_DATA_SAMPLE
+    FINAL_SAMPLED_DATA_PATH: str = settings.SAMPLED_DATA_PATH

@@ -99,16 +99,32 @@ format-check = "poetry run ruff format --check ."
 lint-fix = "poetry run ruff check --fix ."
 format-fix = "poetry run ruff format ."
 
+# command must be run from the project root directory
+
+# ---------------------------------------------
+# --- Web Crawling to NoSQL Data Store/Json ---
+# ---------------------------------------------
+
 # Web crawling ETL tasks
-# scrapy commands
 # crawl restaurant locations, categories, and URLs
 crawl-ubereats-categories = "poetry run scrapy crawl category_us"
 
 # crawl restaurant menus and item details
 crawl-ubereats = "poetry run scrapy crawl restaurant_us"
 
+# -------------------------------------------------
+# --- Export & Sampling from Crawled data store ---
+# -------------------------------------------------
+
+# DWH export pipeline
+dwh-export = "dotenv run python -m tools.run dwh-export"
+
 # generate a sample training dataset from the crawled data (stored in Kaggle)
 generate-train-sample = "dotenv run python -m tools.run generate-train-sample"
+
+# -------------------
+# --- Model Serve ---
+# -------------------
 
 # serve the trained model locally using MLflow
 serve-model-local = "poetry run python -m tools.serve --port 5000"
@@ -147,6 +163,10 @@ curl http://127.0.0.1:5000/invocations -H "Content-Type: application/json" --dat
     }
   }'
 '''
+
+# -----------------------------------------------------
+# --- ML Modelling (Training -> Tuning -> Register) ---
+# -----------------------------------------------------
 
 # ML pipeline tasks
 [tool.poe.tasks.run-help]

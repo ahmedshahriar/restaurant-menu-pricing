@@ -5,10 +5,10 @@ import mlflow
 from loguru import logger
 
 from application.config import apply_global_settings
-from application.dataset import generate_sampled_featured_data
+from application.dataset import generate_training_sample
 from core import __version__, settings
 from model import REGISTRY
-from pipelines import autotune_pipeline
+from pipelines import autotune_pipeline, dwh_export_pipeline
 
 HELP_TEXT = f"""
 Restaurant Menu Pricing CLI v{__version__}
@@ -186,7 +186,6 @@ def cli(
         logger.info(f"Running pipeline for models: {models}")
 
         try:
-            _print_plan(models, sampled_data_path, n_trials, cv_folds, scoring, best_model_registry_name)
             result = autotune_pipeline(
                 model_names=models,
                 data_path=sampled_data_path,
@@ -210,7 +209,7 @@ def generate():
     Generates a sampled, feature-enriched training dataset from the data warehouse.
 
     \b
-    - Output: {settings.FINAL_FEATURED_DATA_SAMPLE}
+    - Output: {settings.TRAINING_DATA_SAMPLE_PATH}
     - Produces a cleaned, enriched subset of crawled restaurant data for model training.
     - Includes NER-extracted ingredients, cost-of-living index, and location features (e.g., population density).
     - Removes price outliers and normalizes price ranges into buckets.
@@ -225,10 +224,37 @@ def generate():
     try:
         # apply global settings (seed, matplotlib, warnings)
         apply_global_settings()
-        _ = generate_sampled_featured_data()
-        logger.info(f"Data generation complete -> {settings.FINAL_FEATURED_DATA_SAMPLE}")
+        _ = generate_training_sample()
+        logger.info(f"Data generation complete -> {settings.SAMPLED_DATA_PATH}")
     except Exception as e:
         logger.error(f"Data generation failed: {e}")
+        raise click.ClickException(str(e)) from e
+
+
+@cli.command("dwh-export")
+def dwh_export():
+    """
+    Exports raw restaurant and menu data from the data warehouse (MongoDB) to CSV files.
+
+    \b
+    - Output directory: {settings.DWH_EXPORT_DIR}
+    - Restaurant data file: {settings.RESTAURANT_DATA_PATH}
+    - Menu data file: {settings.MENU_DATA_PATH}
+    - Requires MongoDB connection settings to be configured in environment variables or .env file.
+    - Example env vars:
+        - DATABASE_HOST
+        - DATABASE_NAME
+        - DATABASE_COLLECTION
+
+    """
+    try:
+        # apply global settings (seed, matplotlib, warnings)
+        apply_global_settings()
+        logger.info("Starting MongoDB export job...")
+        dwh_export_pipeline()
+        logger.info(f"DWH export job completed successfully -> {settings.DWH_EXPORT_DIR}")
+    except Exception as e:
+        logger.error(f"DWH export job failed: {e}")
         raise click.ClickException(str(e)) from e
 
 

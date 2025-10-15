@@ -22,7 +22,7 @@ class MongoDatabaseConnector:
     def __new__(cls) -> MongoClient:
         if cls._instance is None:
             try:
-                logger.info(f"Connecting to MongoDB at {settings.DATABASE_HOST} ...")
+                logger.info("Connecting to MongoDB...")
                 cls._instance = MongoClient(
                     settings.DATABASE_HOST,
                     serverSelectionTimeoutMS=5000,  # 5s timeout to fail fast
