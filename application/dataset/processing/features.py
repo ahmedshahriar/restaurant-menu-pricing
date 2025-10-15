@@ -70,7 +70,7 @@ def merge_density(df_restaurant_with_address: pd.DataFrame, df_density: pd.DataF
 def filter_to_top_states(df_res_density: pd.DataFrame, states):
     """Filter the dataframe to only include restaurants in the specified states."""
     states = tuple(s.lower() for s in states)
-    logger.info(f"Filtering out states not in {states}")
+    logger.info("Filtering out states not in {}", states)
     return df_res_density[df_res_density.state_id.isin(states)].copy()
 
 

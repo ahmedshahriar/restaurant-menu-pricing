@@ -4,12 +4,10 @@
 **/._.DS_Store
 
 # remove later
-data/
-datasets
+datasets/
 readme-demo.md
 application/networks
 backups/pythonhasseed-issue.md
-pipelines/run.py
 model/inference
 
 # IDE

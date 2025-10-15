@@ -35,10 +35,13 @@ class Settings(BaseSettings):
     DATABASE_NAME: str | None = None
     DATABASE_COLLECTION: str | None = None
 
+    # data warehouse export directory
+    DWH_EXPORT_DIR: str | None = None
+    RESTAURANT_DATA_PATH: str | None = None
+    MENU_DATA_PATH: str | None = None
+
     # dataset paths
     # generated featured dataset path
-    FINAL_FEATURED_DATA_SAMPLE: str | None = None
-
     # after feature engineering and cleaning
     SAMPLED_DATA_PATH: str | None = None
     SAMPLED_DATA_WITH_EMBEDDINGS_PATH: str | None = None
