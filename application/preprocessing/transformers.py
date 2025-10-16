@@ -4,7 +4,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, MinMaxScaler, OneHotEncoder
 
 from .schema import schema
-from .text import dummy as _dummy  # or inline if tiny
 
 
 def build_preprocessor() -> ColumnTransformer:
@@ -19,8 +18,11 @@ def build_preprocessor() -> ColumnTransformer:
                 "tfidf",
                 TfidfVectorizer(
                     analyzer="word",
-                    tokenizer=_dummy,  # pass list-of-phrases as-is
-                    preprocessor=_dummy,
+                    # Inline identity functions (avoid external imports like `dummy`) `def dummy(doc):return doc`
+                    # This avoids external module dependencies (e.g., `application.text`)
+                    # and ensures the model can be unpickled and served without missing imports.
+                    tokenizer=lambda x: x,
+                    preprocessor=lambda x: x,
                     token_pattern=None,  # required when you provide your own tokenizer
                     lowercase=False,  # optional: keep original casing if important
                     ngram_range=(1, 2),  # unigrams + bigrams

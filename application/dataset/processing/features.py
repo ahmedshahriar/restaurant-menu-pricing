@@ -1,26 +1,9 @@
 from __future__ import annotations
 
 import pandas as pd
-import torch
 from loguru import logger
-from transformers import AutoModelForTokenClassification, AutoTokenizer
-from transformers import pipeline as hf_pipeline
 
 from application.utils.misc import convert_entities_to_list
-
-
-# === Food Ingredient Extraction via RoBERTa NER Model ===
-## extract food ingredients utilizing a RoBERTa NER model
-# build NER pipeline
-def build_ner_pipeline(model_name: str):
-    """Build a HuggingFace NER pipeline from a model name."""
-    logger.info("Loading NER model '{}'...", model_name)
-    device = "cuda:0" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForTokenClassification.from_pretrained(model_name)
-    ner_pipeline = hf_pipeline("ner", model=model, tokenizer=tokenizer, device=device)
-    logger.info("NER ready on device={}.", device)
-    return ner_pipeline
 
 
 # extract ingredients using NER pipeline
@@ -33,7 +16,8 @@ def extract_ingredients_series(descriptions: pd.Series, ner_pipeline) -> pd.Seri
 
     try:
         return descriptions.progress_apply(_extract)
-    except Exception:
+    except Exception as e:
+        logger.warning("Progress bar failed, falling back to standard apply: {}", e)
         return descriptions.apply(_extract)
 
 

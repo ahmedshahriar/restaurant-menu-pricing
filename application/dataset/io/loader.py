@@ -5,6 +5,16 @@ from kagglehub import KaggleDatasetAdapter, dataset_load
 from loguru import logger
 
 
+def _safe_eval_ingredients(v):
+    if pd.isna(v):
+        return []
+    try:
+        parsed = ast.literal_eval(v)
+        return parsed if isinstance(parsed, list) else []
+    except Exception:
+        return []
+
+
 def load_kaggle_dataset(dataset_handle: str, dataset_path: str, pandas_kwargs: dict | None = None) -> pd.DataFrame:
     """Load a dataset from Kaggle using kagglehub with specified adapter and pandas options.
     Args:
@@ -35,6 +45,6 @@ def load_model_data(path: str) -> pd.DataFrame:
     """
     df = pd.read_csv(path)
     if "ingredients" in df.columns:
-        df["ingredients"] = df["ingredients"].apply(ast.literal_eval)
+        df["ingredients"] = df["ingredients"].apply(_safe_eval_ingredients)
         logger.info(f"Loaded {len(df)} ingredients from {path}")
     return df.reset_index(drop=True)

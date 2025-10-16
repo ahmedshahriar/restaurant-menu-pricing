@@ -68,24 +68,19 @@ def _print_plan(models, data_path, n_trials, cv_folds, scoring, best_model_regis
     )
 
 
-# @click.command(
-#     name="restaurant-menu-pricing-cli",
-#     help=HELP_TEXT,
-#     context_settings={"help_option_names": ["-h", "--help"]},
-#     no_args_is_help=False,
-#     epilog=(
-#         "EXAMPLES:\n\n"
-#         "python -m tools.run  # runs all models by default\n\n"
-#         "python -m tools.run --list-models  # list available models\n\n"
-#         "python -m tools.run --dry-run  # show the plan without running\n\n"
-#         "python -m tools.run --models dtree,xgboost --n-trials 5 --cv-folds 4\n\n"
-#     ),
-# )
 @click.group(
+    name="restaurant-menu-pricing-cli",
     invoke_without_command=True,
     help=HELP_TEXT,
     context_settings={"help_option_names": ["-h", "--help"]},
     no_args_is_help=False,
+    epilog=(
+        "EXAMPLES:\n\n"
+        "python -m tools.run  # runs all models by default\n\n"
+        "python -m tools.run --list-models  # list available models\n\n"
+        "python -m tools.run --dry-run  # show the plan without running\n\n"
+        "python -m tools.run --models dtree,xgboost --n-trials 5 --cv-folds 4\n\n"
+    ),
 )
 @click.version_option(
     version=__version__, message="Restaurant Menu Pricing CLI v%(version)s", prog_name="Restaurant CLI"

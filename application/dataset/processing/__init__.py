@@ -8,7 +8,6 @@ from .cleaning import (
 )
 from .features import (
     attach_cost_index,
-    build_ner_pipeline,
     extract_ingredients_series,
     filter_to_top_states,
     load_states_name_dict,
@@ -32,7 +31,6 @@ __all__ = [
     "pick_top_cities",
     "build_final_menu_frame",
     # feature functions
-    "build_ner_pipeline",
     "extract_ingredients_series",
     "attach_cost_index",
     "merge_density",

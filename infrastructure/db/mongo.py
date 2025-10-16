@@ -37,5 +37,6 @@ class MongoDatabaseConnector:
         return cls._instance
 
 
-# convenient global client
-connection: MongoClient = MongoDatabaseConnector()
+def get_client() -> MongoClient:
+    """Get the singleton MongoClient instance."""
+    return MongoDatabaseConnector()

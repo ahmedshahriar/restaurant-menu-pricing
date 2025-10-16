@@ -60,6 +60,7 @@ ruff = "0.13.3"
 pytest = "8.4.2"
 pre-commit = "4.3.0"
 python-dotenv = "^1.1.1"
+pytest-cov = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -127,9 +128,11 @@ generate-train-sample = "dotenv run python -m tools.run generate-train-sample"
 # -------------------
 
 # serve the trained model locally using MLflow
+# change port number if needed
 serve-model-local = "poetry run python -m tools.serve --port 5000"
 
 # Example curl command to call the served model
+# change port number if needed
 call-inference = '''
 curl http://127.0.0.1:5000/invocations -H "Content-Type: application/json" --data
   '{
@@ -206,5 +209,24 @@ help = "Quick development run with minimal Optuna trials and CV folds"
 cmd = "dotenv run python -m tools.run --n-trials 50 --cv-folds 5"
 help = "Full production-grade run with more trials and folds"
 
+# -------------
+# --- Tests ---
+# -------------
+
 [tool.poe.tasks.test]
 cmd = "poetry run pytest tests/"
+
+# -----------------------------
+# --- Pytest Configuration ---
+# -----------------------------
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-q -ra --disable-warnings --maxfail=1 --cov=."
+testpaths = ["tests"]
+markers = [
+    "unit: fast unit tests (no IO/network)",
+    "cli: tests that exercise the Click CLIs (tools.run / tools.serve)",
+    "integration: touches filesystem, subprocess, or larger flows",
+    "slow: optional long-running tests (HF/Optuna/MLflow end-to-end)",
+]
