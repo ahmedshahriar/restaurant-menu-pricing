@@ -60,6 +60,7 @@ ruff = "0.13.3"
 pytest = "8.4.2"
 pre-commit = "4.3.0"
 python-dotenv = "^1.1.1"
+pytest-cov = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -214,3 +215,18 @@ help = "Full production-grade run with more trials and folds"
 
 [tool.poe.tasks.test]
 cmd = "poetry run pytest tests/"
+
+# -----------------------------
+# --- Pytest Configuration ---
+# -----------------------------
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-q -ra --disable-warnings --maxfail=1 --cov=."
+testpaths = ["tests"]
+markers = [
+    "unit: fast unit tests (no IO/network)",
+    "cli: tests that exercise the Click CLIs (tools.run / tools.serve)",
+    "integration: touches filesystem, subprocess, or larger flows",
+    "slow: optional long-running tests (HF/Optuna/MLflow end-to-end)",
+]
