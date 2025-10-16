@@ -8,7 +8,6 @@ datasets/
 readme-demo.md
 application/networks
 backups/pythonhasseed-issue.md
-model/inference
 
 # ignore model file
 menu-price-img/model_dir
