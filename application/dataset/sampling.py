@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
+from application.networks import NERModelSingleton
+
 from . import io, processing
 from .config import Config
 
@@ -89,7 +91,7 @@ def generate_training_sample(cfg: Config = _DEFAULT_CFG) -> pd.DataFrame:
     df_sampled = processing.remove_price_outliers_iqr(df_final, price_col="price", whisker=1.5)
     logger.info("Remaining rows: {}", len(df_sampled))
 
-    ner_pipeline = processing.build_ner_pipeline(cfg.NER_MODEL)
+    ner_pipeline = NERModelSingleton().get_pipeline()
     df_sampled["ingredients"] = processing.extract_ingredients_series(df_sampled["description"], ner_pipeline)
     df_sampled = df_sampled.drop(columns=["description"])  # drop after extracting
     df_sampled = processing.clean_ingredients_column(df_sampled, col="ingredients")
