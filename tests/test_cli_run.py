@@ -91,3 +91,21 @@ def test_subcommand_dwh_export_calls_pipeline(cli_stub_state, monkeypatch):
     res = runner.invoke(run_mod.cli, ["dwh-export"])
     assert res.exit_code == 0, res.output
     assert cli_stub_state.dwh_export_calls == 1
+
+
+def test_cli_top_level_wrapped_exception(cli_stub_state, monkeypatch):
+    run_mod = _import_cli()
+    # silence mlflow
+    monkeypatch.setattr(run_mod.mlflow, "set_tracking_uri", lambda *a, **k: None, raising=False)
+    monkeypatch.setattr(run_mod.mlflow, "set_experiment", lambda *a, **k: None, raising=False)
+
+    # force autotune failure to exercise ClickException branch
+    def boom(**kwargs):
+        raise RuntimeError("autotune failed")
+
+    monkeypatch.setattr(run_mod, "autotune_pipeline", boom, raising=False)
+    from click.testing import CliRunner
+
+    res = CliRunner().invoke(run_mod.cli, [])
+    assert res.exit_code != 0
+    assert "autotune failed" in res.output.lower()

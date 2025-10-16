@@ -48,6 +48,46 @@ class _FakeProcessRaisesKeyboardInterrupt:
         self._code = -9
 
 
+class _FakeProcessError:
+    def __init__(self, code=2):
+        self._code = code
+        self.pid = 4242
+
+    def wait(self):
+        return self._code
+
+    def poll(self):
+        return self._code
+
+
+def test_serve_child_exits_with_nonzero(monkeypatch):
+    from click.testing import CliRunner
+
+    import tools.serve as serve_mod
+
+    monkeypatch.setattr("shutil.which", lambda _: "/usr/bin/mlflow")
+    monkeypatch.setattr("subprocess.Popen", lambda *a, **k: _FakeProcessError(code=2))
+    res = CliRunner().invoke(serve_mod.main, ["--port", "5556"])
+    assert res.exit_code == 2
+    assert "exited with code 2" in res.output.lower()
+
+
+def test_serve_popen_filenotfound(monkeypatch):
+    from click.testing import CliRunner
+
+    import tools.serve as serve_mod
+
+    monkeypatch.setattr("shutil.which", lambda _: "/usr/bin/mlflow")
+
+    def _raise(*a, **k):
+        raise FileNotFoundError("mlflow vanished")
+
+    monkeypatch.setattr("subprocess.Popen", _raise)
+    res = CliRunner().invoke(serve_mod.main, [])
+    assert res.exit_code == 127
+    assert "command not found" in res.output.lower()
+
+
 def test_serve_errors_when_mlflow_cli_missing(monkeypatch):
     main = _import_serve_main()
 
@@ -89,3 +129,20 @@ def test_serve_keyboard_interrupt_graceful_shutdown(monkeypatch):
     assert res.exit_code == 130
     assert "stopping mlflow model server" in res.output.lower()
     assert "server stopped" in res.output.lower()
+
+
+def test_serve_unexpected_exception(monkeypatch):
+    from click.testing import CliRunner
+
+    import tools.serve as serve_mod
+
+    monkeypatch.setattr("shutil.which", lambda _: "/usr/bin/mlflow")
+
+    def _raise(*a, **k):
+        raise RuntimeError("unexpected")
+
+    monkeypatch.setattr("subprocess.Popen", _raise)
+    res = CliRunner().invoke(serve_mod.main, [])
+    # generic error path exits with 1
+    assert res.exit_code == 1
+    assert "unexpected error" in res.output.lower()
