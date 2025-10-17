@@ -1,4 +1,7 @@
 import pandas as pd
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_preprocess_menu_drops_invalid_and_parses_price(df_menu_raw):
@@ -41,3 +44,36 @@ def test_normalize_price_range_maps_to_buckets():
     df = pd.DataFrame({"price_range": ["$", "$$", "$$$"]})
     out = normalize_price_range(df)
     assert out["price_range"].tolist() == ["cheap", "moderate", "expensive"]
+
+
+def test_preprocess_menu_handles_currency_and_whitespace():
+    import pandas as pd
+
+    from application.dataset.processing.cleaning import preprocess_menu
+
+    # Prices end with "USD"; keep one row with a real description
+    df = pd.DataFrame(
+        [
+            {"restaurant_id": 1, "category": "Salads", "description": "Tomato & Basil", "price": "1234.50USD"},
+            {"restaurant_id": 1, "category": "Picked for you", "description": "&nbsp;", "price": "0USD"},
+        ]
+    )
+
+    out = preprocess_menu(df)
+
+    # One valid row should remain after cleaning
+    assert len(out) == 1
+    assert float(out["price"].iloc[0]) == 1234.50
+    assert out["category"].iloc[0] == "Salads"
+    assert out["description"].iloc[0] != ""  # not blank after cleaning
+
+
+def test_normalize_price_range_unknown_values_default_to_expensive():
+    import pandas as pd
+
+    from application.dataset.processing.cleaning import normalize_price_range
+
+    df = pd.DataFrame({"price_range": ["$", "$$$$", "unknown", None, "$$"]})
+    out = normalize_price_range(df)
+
+    assert out["price_range"].tolist() == ["cheap", "expensive", "expensive", "expensive", "moderate"]
