@@ -1,7 +1,4 @@
-import pytest
 from click.testing import CliRunner
-
-pytestmark = [pytest.mark.unit, pytest.mark.cli]
 
 
 def _import_cli():
