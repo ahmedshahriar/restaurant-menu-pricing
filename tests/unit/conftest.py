@@ -49,6 +49,26 @@ def _install_minimal_stubs():
     sys.modules["core.settings"] = core_settings_mod
     core_pkg.settings = core_settings_mod
 
+    # ----- mlflow (avoid importing real mlflow in unit tests) -----
+    mlflow = types.ModuleType("mlflow")
+    mlflow.set_tracking_uri = lambda *a, **k: None
+    mlflow.set_experiment = lambda *a, **k: None
+    # useful no-ops if training code calls them inside a run:
+    mlflow.start_run = lambda *a, **k: types.SimpleNamespace(__enter__=lambda s: s, __exit__=lambda s, *args: None)
+    mlflow.end_run = lambda *a, **k: None
+    mlflow.log_params = mlflow.log_param = lambda *a, **k: None
+    mlflow.log_metrics = mlflow.log_metric = lambda *a, **k: None
+    mlflow.set_tag = mlflow.set_tags = lambda *a, **k: None
+    sys.modules["mlflow"] = mlflow
+
+    mlflow_sklearn = types.ModuleType("mlflow.sklearn")
+    mlflow_sklearn.autolog = lambda *a, **k: None
+    sys.modules["mlflow.sklearn"] = mlflow_sklearn
+
+    mlflow_models = types.ModuleType("mlflow.models")
+    mlflow_models.infer_signature = lambda *a, **k: None
+    sys.modules["mlflow.models"] = mlflow_models
+
     # ----- kagglehub (block accidental downloads) -----
     kagglehub = types.ModuleType("kagglehub")
 
@@ -63,9 +83,17 @@ def _install_minimal_stubs():
     sys.modules["kagglehub"] = kagglehub
 
     # ----- application.preprocessing constants used by splitter -----
+    # ----- application.preprocessing (stubbed) -----
     app_pre = types.ModuleType("application.preprocessing")
     app_pre.DATA_SPLIT_COL = "category"
     app_pre.TARGET_COL = "price"
+
+    def _stub_build_preprocessor():
+        # minimal placeholder so pipelines.autotune can import it;
+        # tests will monkeypatch this symbol in pipelines.autotune anyway.
+        return object()
+
+    app_pre.build_preprocessor = _stub_build_preprocessor
     sys.modules["application.preprocessing"] = app_pre
 
 
@@ -75,6 +103,13 @@ def _load_utils_misc():
     sys.modules.pop("application.utils.misc", None)
     sys.modules.pop("application.utils", None)
     importlib.import_module("application.utils.misc")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _unset_cli_stubbed_modules_for_unit():
+    # If CLI suite injected stubs, remove them so we can import the on-disk package
+    for name in ("pipelines", "model"):
+        sys.modules.pop(name, None)
 
 
 @pytest.fixture(scope="session", autouse=True)
