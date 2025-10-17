@@ -1,4 +1,7 @@
 import pandas as pd
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_pick_top_cities_selects_expected_pairs():
@@ -63,3 +66,28 @@ def test_build_final_menu_frame_joins_and_outputs_columns(df_restaurant_base, df
 
     assert not final.empty
     assert {"price_range", "state_id", "city", "category", "description", "price"}.issubset(final.columns)
+
+
+def test_compute_top_categories_minimal(df_menu_raw, df_restaurant_base):
+    from application.dataset.processing.selection import compute_top_categories
+
+    # Restaurants keep 'id' (right_on key), and add geo + restaurant category
+    res = df_restaurant_base.copy()
+    res["city"] = ["appleton", "san diego", "austin"]
+    res["state_id"] = ["wi", "ca", "tx"]
+    res["density"] = [1156, 4300, 3100]
+
+    # add restaurant-side category so merge yields category_x/category_y
+    res["category"] = ["House", "House", "House"]
+
+    # Menu already has restaurant_id/category
+    df_menu = df_menu_raw.copy()
+
+    # Keep it deterministic/small
+    df_res_ext, top_cats = compute_top_categories(df_menu, res, top_n_per_city=3)
+
+    # Expectations: menu_category exists and grouping worked
+    assert {"restaurant_id", "city", "state_id", "density"}.issubset(df_res_ext.columns)
+    assert "menu_category" in df_res_ext.columns
+    assert not top_cats.empty
+    assert {"state_id", "city", "menu_category", "count"}.issubset(top_cats.columns)
