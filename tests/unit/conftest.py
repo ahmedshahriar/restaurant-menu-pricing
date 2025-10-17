@@ -1,10 +1,15 @@
 import importlib
 import sys
 import types
+from pathlib import Path
 from types import SimpleNamespace
 
 import pandas as pd
 import pytest
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 
 def _install_minimal_stubs():
@@ -157,6 +162,12 @@ def _install_cli_stubs():
     """
     # -- application.config
     application = sys.modules.get("application") or types.ModuleType("application")
+
+    from pathlib import Path
+
+    PROJECT_ROOT = Path(__file__).resolve().parents[2]
+    application.__path__ = [str(PROJECT_ROOT / "application")]  # make it a package proxy
+
     application.config = types.ModuleType("application.config")
 
     def apply_global_settings():

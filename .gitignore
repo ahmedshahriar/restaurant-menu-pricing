@@ -6,7 +6,6 @@
 # remove later
 datasets/
 readme-demo.md
-application/networks
 backups/pythonhasseed-issue.md
 
 # ignore model file

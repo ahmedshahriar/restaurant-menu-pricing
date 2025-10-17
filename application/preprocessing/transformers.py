@@ -18,7 +18,9 @@ def build_preprocessor() -> ColumnTransformer:
                 "tfidf",
                 TfidfVectorizer(
                     analyzer="word",
-                    # Inline identity functions (avoid external imports like `dummy`) `def dummy(doc):return doc`
+                    # Inline identity functions (avoid external imports like a dummy function)
+                    # Example:
+                    #     def dummy(doc): return doc
                     # This avoids external module dependencies (e.g., `application.text`)
                     # and ensures the model can be unpickled and served without missing imports.
                     tokenizer=lambda x: x,
