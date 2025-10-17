@@ -1,8 +1,3 @@
-import pytest
-
-pytestmark = pytest.mark.unit
-
-
 def test_load_model_data_parses_ingredients_list(tmp_path):
     import pandas as pd
 

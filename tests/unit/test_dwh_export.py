@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.unit
-
 
 def test_build_tables_creates_restaurant_and_menu_frames():
     from application.dataset.dwh_export import build_tables

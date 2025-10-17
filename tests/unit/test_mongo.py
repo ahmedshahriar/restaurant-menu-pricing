@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.unit
-
 
 def test_get_client_success_and_singleton(monkeypatch):
     from infrastructure.db.mongo import MongoDatabaseConnector, get_client
@@ -59,8 +57,6 @@ def test_get_client_failure_raises(monkeypatch):
     MongoDatabaseConnector._instance = None
     monkeypatch.setattr(mod, "MongoClient", FailClient, raising=True)
     monkeypatch.setattr(mod.settings, "DATABASE_HOST", "mongodb://localhost:27017", raising=False)
-
-    import pytest
 
     with pytest.raises(ConnectionFailure):
         _ = get_client()

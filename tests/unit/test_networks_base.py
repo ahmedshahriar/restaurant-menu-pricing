@@ -1,8 +1,3 @@
-import pytest
-
-pytestmark = pytest.mark.unit
-
-
 def test_singleton_meta_reuses_instance_and_ignores_args():
     from application.networks.base import SingletonMeta
 
