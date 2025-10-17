@@ -68,7 +68,7 @@ def test_cli_top_level_runs_autotune_pipeline(cli_stub_state, monkeypatch):
     assert len(cli_stub_state.autotune_calls) == 1
     call = cli_stub_state.autotune_calls[0]
     assert len(call["model_names"]) >= 2
-    assert call["best_model_registry_name"] == "restaurant_best_model"
+    assert call["best_model_registry_name"] == "ubereats-menu-price-predictor"
 
 
 def test_subcommand_generate_train_sample_calls_dataset(cli_stub_state, monkeypatch):

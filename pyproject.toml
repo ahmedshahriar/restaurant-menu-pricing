@@ -17,14 +17,10 @@ dependencies = [
     "scikit-learn>=1.7.2,<2.0.0",
     "transformers>=4.56.2,<4.57.0", # broken metadata err v4.57.0 https://github.com/huggingface/transformers/issues/41331
 
-    # TensorFlow and PyTorch (with Metal support for Apple Silicon Macs (darwin))
-    "tensorflow-macos>=2.16.2,<3.0.0",
-    "tensorflow-metal>=1.2.0,<2.0.0",
-
     "torch>=2.8.0,<3.0.0",
     "xgboost>=3.0.5,<4.0.0",
     "lightgbm (>=4.6.0,<5.0.0)",
-    "scikeras[tensorflow]>=0.13.0,<0.14.0",
+    "scikeras>=0.13.0,<0.14.0",
     "yellowbrick>=1.5,<2.0",
     "optuna>=4.5.0,<5.0.0",
 
@@ -50,6 +46,14 @@ dependencies = [
     "notebook (>=7.4.7,<8.0.0)",
     "ipywidgets (>=8.1.7,<9.0.0)",
     "jupyter (>=1.1.1,<2.0.0)",
+]
+
+# OS-specific TensorFlow variants
+[project.optional-dependencies]
+tensorflow = [
+    "tensorflow>=2.16.2,<3.0.0; platform_system == 'Linux' or platform_system == 'Windows'",
+    "tensorflow-macos>=2.16.2,<3.0.0; platform_system == 'Darwin' and platform_machine == 'arm64'",
+    "tensorflow-metal>=1.2.0,<2.0.0; platform_system == 'Darwin' and platform_machine == 'arm64'",
 ]
 
 [tool.poetry]

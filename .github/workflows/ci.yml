@@ -14,10 +14,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.9"
 
@@ -40,13 +40,20 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    env:
+      # Prevent optional deep learning backends (TensorFlow, Flax) from loading
+      # to avoid illegal instruction errors in CI and speed up startup.
+      # Disable Hugging Face telemetry to reduce noise in logs.
+      TRANSFORMERS_NO_TF: "1"
+      TRANSFORMERS_NO_FLAX: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.9"
 
@@ -57,7 +64,7 @@ jobs:
 
       - name: Install packages
         run: |
-          poetry install
+          poetry install --no-root
           poetry self add 'poethepoet[poetry_plugin]'
 
       - name: Run tests
