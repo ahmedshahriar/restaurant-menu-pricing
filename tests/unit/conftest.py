@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pandas as pd
 import pytest
 
+# Ensure repo root on path (so "import application.*" works)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -14,14 +15,12 @@ if str(PROJECT_ROOT) not in sys.path:
 
 def _install_minimal_stubs():
     """
-    Provide minimal external modules your dataset code imports so unit tests
-    can run without the full stack (no real env, no network).
+    Minimal stubs required for unit tests (no network, no external services).
     """
-    # ----- core package with a proper `core.settings` module -----
-    core_pkg = types.ModuleType("core")  # package
-    core_settings_mod = types.ModuleType("core.settings")  # submodule
+    # ----- core.settings (module + settings object) -----
+    core_pkg = types.ModuleType("core")  # package placeholder
+    core_settings_mod = types.ModuleType("core.settings")
 
-    # The underlying settings object (if your code ever imports it directly)
     settings_obj = SimpleNamespace(
         INDEX_DS="owner/index-ds",
         INDEX_FILE="index.csv",
@@ -40,19 +39,15 @@ def _install_minimal_stubs():
         MENU_DATA_PATH="restaurant-menus.csv",
         NER_MODEL="Dizex/InstaFoodRoBERTa-NER",
     )
-
-    # (a) expose a `settings` variable inside the module
     core_settings_mod.settings = settings_obj
-    # (b) also mirror all values as module-level attributes
     for k, v in settings_obj.__dict__.items():
         setattr(core_settings_mod, k, v)
 
-    # Register package and submodule, and make package point to submodule for `from core import settings`
     sys.modules["core"] = core_pkg
     sys.modules["core.settings"] = core_settings_mod
-    core_pkg.settings = core_settings_mod  # allow `from core import settings` to resolve to the submodule
+    core_pkg.settings = core_settings_mod  # support `from core import settings`
 
-    # ----- kagglehub (so loader import works even if pkg missing) -----
+    # ----- kagglehub (block accidental downloads) -----
     kagglehub = types.ModuleType("kagglehub")
 
     class _Adapter:
@@ -74,18 +69,18 @@ def _install_minimal_stubs():
 
 @pytest.fixture(scope="session", autouse=True)
 def _load_utils_misc():
-    # ensure any old stub is gone, then load the real file so coverage sees it
+    # Make sure we execute the on-disk misc.py so coverage counts it
     sys.modules.pop("application.utils.misc", None)
     sys.modules.pop("application.utils", None)
     importlib.import_module("application.utils.misc")
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _stubs_installed():
+def _install_unit_stubs():
     _install_minimal_stubs()
 
 
-# ---------- Shared tiny DataFrames ----------
+# ---------- Shared tiny DataFrames for multiple tests ----------
 
 
 @pytest.fixture
@@ -101,7 +96,6 @@ def df_menu_raw():
 
 @pytest.fixture
 def df_restaurant_base():
-    # Include ZIPs and uppercase state codes so build_address_fields() extracts successfully
     return pd.DataFrame(
         [
             {"id": 1, "price_range": "$$", "full_address": "123 Main, Appleton, WI 54911", "lat": 0.0, "lng": 0.0},

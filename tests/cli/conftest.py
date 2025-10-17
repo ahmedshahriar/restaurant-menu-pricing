@@ -23,7 +23,7 @@ _CLI_STATE = SimpleNamespace(
 def _install_cli_stubs():
     """
     Install CLI-only stubs without breaking the real package layout.
-    We import the on-disk `application` package and attach/override the pieces
+    Import the on-disk `application` package and attach/override the pieces
     tools.run/tools.serve use.
     """
     # ----- import the real application package (not a synthetic module) -----

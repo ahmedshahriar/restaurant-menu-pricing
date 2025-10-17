@@ -6,7 +6,7 @@ import pytest
 def test_splitter_stratified_and_shapes():
     sp = pytest.importorskip("application.dataset.io.splitter", reason="splitter module not found")
 
-    # Minimal frame aligned with your constants: DATA_SPLIT_COL='category', TARGET_COL='price'
+    # Minimal frame aligned with the constants: DATA_SPLIT_COL='category', TARGET_COL='price'
     df = pd.DataFrame(
         {
             "category": ["A"] * 8 + ["B"] * 2,  # imbalanced on purpose
@@ -15,7 +15,7 @@ def test_splitter_stratified_and_shapes():
         }
     )
 
-    # Your module’s public API
+    # module’s public API
     assert hasattr(sp, "split_data"), "split_data() not exported from splitter.py"
     X_train, X_test, y_train, y_test = sp.split_data(df, test_size=0.2)
 
