@@ -18,8 +18,8 @@ def _install_minimal_stubs():
     Minimal stubs required for unit tests (no network, no external services).
     """
     # ----- core.settings (module + settings object) -----
-    core_pkg = types.ModuleType("core")  # package placeholder
-    core_settings_mod = types.ModuleType("core.settings")
+    core_pkg = sys.modules.get("core") or types.ModuleType("core")
+    core_settings_mod = sys.modules.get("core.settings") or types.ModuleType("core.settings")
 
     settings_obj = SimpleNamespace(
         INDEX_DS="owner/index-ds",
@@ -39,13 +39,15 @@ def _install_minimal_stubs():
         MENU_DATA_PATH="restaurant-menus.csv",
         NER_MODEL="Dizex/InstaFoodRoBERTa-NER",
     )
+
+    # expose values both ways: module-level attrs and a .settings object
     core_settings_mod.settings = settings_obj
     for k, v in settings_obj.__dict__.items():
         setattr(core_settings_mod, k, v)
 
     sys.modules["core"] = core_pkg
     sys.modules["core.settings"] = core_settings_mod
-    core_pkg.settings = core_settings_mod  # support `from core import settings`
+    core_pkg.settings = core_settings_mod
 
     # ----- kagglehub (block accidental downloads) -----
     kagglehub = types.ModuleType("kagglehub")

@@ -174,11 +174,10 @@ def test_save_data_handles_compress_and_empty_menu(tmp_path, monkeypatch):
     import pandas as pd
 
     import application.dataset.dwh_export as mod
-    from core import settings as S
 
-    # Ensure the settings are present even if another conftest imported core.settings early
-    monkeypatch.setattr(S, "RESTAURANT_DATA_PATH", "restaurants.csv", raising=False)
-    monkeypatch.setattr(S, "MENU_DATA_PATH", "restaurant-menus.csv", raising=False)
+    # Patch the settings object that save_data actually uses
+    monkeypatch.setattr(mod.settings, "RESTAURANT_DATA_PATH", "restaurants.csv", raising=False)
+    monkeypatch.setattr(mod.settings, "MENU_DATA_PATH", "restaurant-menus.csv", raising=False)
 
     df_rest = pd.DataFrame([{"id": 1, "name": "R"}])
     df_menu = pd.DataFrame()  # exercise "No menu data to write."
