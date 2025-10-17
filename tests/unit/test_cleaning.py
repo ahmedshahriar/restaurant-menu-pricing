@@ -1,7 +1,4 @@
 import pandas as pd
-import pytest
-
-pytestmark = pytest.mark.unit
 
 
 def test_preprocess_menu_drops_invalid_and_parses_price(df_menu_raw):

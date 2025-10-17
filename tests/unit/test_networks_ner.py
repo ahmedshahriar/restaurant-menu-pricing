@@ -1,8 +1,3 @@
-import pytest
-
-pytestmark = pytest.mark.unit
-
-
 def test_ner_singleton_initializes_with_fake_hf(monkeypatch):
     # Patch torch device checks
     import application.networks.ner as ner_mod

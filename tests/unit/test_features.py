@@ -1,7 +1,4 @@
 import pandas as pd
-import pytest
-
-pytestmark = pytest.mark.unit
 
 
 def test_attach_cost_index_adds_column(tmp_cost_index_csv):

@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-pytestmark = pytest.mark.unit
-
 
 def test_load_base_frames_uses_injected_loader(monkeypatch):
     """

@@ -4,6 +4,7 @@
 **/._.DS_Store
 
 # remove later
+configs
 datasets/
 readme-demo.md
 backups/pythonhasseed-issue.md

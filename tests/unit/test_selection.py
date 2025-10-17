@@ -1,7 +1,4 @@
 import pandas as pd
-import pytest
-
-pytestmark = pytest.mark.unit
 
 
 def test_pick_top_cities_selects_expected_pairs():

@@ -2,9 +2,6 @@ import math
 
 import numpy as np
 import pandas as pd
-import pytest
-
-pytestmark = pytest.mark.unit
 
 
 def test_unescape_html_handles_amp_and_nbsp_tolerantly():
