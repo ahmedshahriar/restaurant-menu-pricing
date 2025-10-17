@@ -27,7 +27,7 @@ def test_get_client_success_and_singleton(monkeypatch):
 
     MongoDatabaseConnector._instance = None  # <-- reset
     monkeypatch.setattr(mod, "MongoClient", FakeClient, raising=True)
-    # in case your code reads DATABASE_HOST
+    # in case it reads DATABASE_HOST
     monkeypatch.setattr(mod.settings, "DATABASE_HOST", "mongodb://localhost:27017", raising=False)
 
     c1 = get_client()

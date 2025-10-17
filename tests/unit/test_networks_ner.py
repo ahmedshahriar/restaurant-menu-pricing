@@ -41,7 +41,7 @@ def test_ner_singleton_initializes_with_fake_hf(monkeypatch):
     monkeypatch.setattr(ner_mod, "AutoModelForTokenClassification", FakeModel, raising=True)
     monkeypatch.setattr(ner_mod, "pipeline", fake_pipeline, raising=True)
 
-    # Ensure a model name exists in settings (your conftest already sets NER_MODEL)
+    # Ensure a model name exists in settings (the conftest already sets NER_MODEL)
     # Instantiate twice → same instance
     from application.networks.ner import NERModelSingleton
 

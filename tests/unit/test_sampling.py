@@ -253,7 +253,7 @@ def test_generate_training_sample_minimal(monkeypatch, tmp_path, tmp_cost_index_
 
     # cost index attach: read from provided CSV
     def fake_attach_cost_index(df, path):
-        # emulate a left-merge using our tmp CSV
+        # emulate a left-merge using the tmp CSV
         cost = pd.read_csv(path)
         out = df.merge(cost, on=["state_id", "city"], how="left")
         return out

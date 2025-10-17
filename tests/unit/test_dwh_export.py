@@ -170,21 +170,25 @@ def test_fetch_all_docs_error_is_logged_and_raised(monkeypatch):
         fetch_all_docs()
 
 
-def test_save_data_handles_compress_and_empty_menu(tmp_path):
+def test_save_data_handles_compress_and_empty_menu(tmp_path, monkeypatch):
     import pandas as pd
 
-    from application.dataset.dwh_export import save_data
+    import application.dataset.dwh_export as mod
 
-    # minimal frames
+    # Patch the settings object that save_data actually uses
+    monkeypatch.setattr(mod.settings, "RESTAURANT_DATA_PATH", "restaurants.csv", raising=False)
+    monkeypatch.setattr(mod.settings, "MENU_DATA_PATH", "restaurant-menus.csv", raising=False)
+
     df_rest = pd.DataFrame([{"id": 1, "name": "R"}])
     df_menu = pd.DataFrame()  # exercise "No menu data to write."
-    # write gzipped
-    save_data(df_rest, df_menu, str(tmp_path), compress=True)
-    # both files use configured names with optional .gz
-    from core import settings as S
 
-    r_path = tmp_path / f"{S.RESTAURANT_DATA_PATH}.gz"
-    m_path = tmp_path / f"{S.MENU_DATA_PATH}.gz"
+    # write gzipped
+    mod.save_data(df_rest, df_menu, str(tmp_path), compress=True)
+
+    # both files use configured names with optional .gz
+    r_path = tmp_path / "restaurants.csv.gz"
+    m_path = tmp_path / "restaurant-menus.csv.gz"
+
     assert r_path.exists()
     # menu not written when empty
     assert not m_path.exists()
