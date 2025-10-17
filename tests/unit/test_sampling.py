@@ -339,8 +339,5 @@ def test_generate_training_sample_minimal(monkeypatch, tmp_path, tmp_cost_index_
     } <= set(out.columns)
     assert len(out) == 1
     assert out["price_range"].iloc[0] == "moderate"
-    assert out["state_id"].iloc[0] == "Wisconsin" or out["state_id"].iloc[0] in (
-        "wi",
-        "Wisconsin",
-    )  # allow either, depending on your normalize order
+    assert out["state_id"].iloc[0] in ("wi", "Wisconsin")  # allow either, depending on your normalize order
     assert isinstance(out["ingredients"].iloc[0], list) and "tomato" in out["ingredients"].iloc[0]

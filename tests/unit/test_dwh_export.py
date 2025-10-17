@@ -166,8 +166,6 @@ def test_fetch_all_docs_error_is_logged_and_raised(monkeypatch):
 
     monkeypatch.setattr(mod, "get_client", lambda: FakeClient(), raising=True)
 
-    import pytest
-
     with pytest.raises(RuntimeError):
         fetch_all_docs()
 
