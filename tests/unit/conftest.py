@@ -246,7 +246,7 @@ def _install_cli_stubs():
         "N_TRIALS": getattr(base, "N_TRIALS", 3),
         "CV_FOLDS": getattr(base, "CV_FOLDS", 2),
         "SCORING": getattr(base, "SCORING", "neg_root_mean_squared_error"),
-        "BEST_MODEL_REGISTRY_NAME": getattr(base, "BEST_MODEL_REGISTRY_NAME", "restaurant_best_model"),
+        "BEST_MODEL_REGISTRY_NAME": getattr(base, "BEST_MODEL_REGISTRY_NAME", "ubereats-menu-price-predictor"),
         "MLFLOW_TRACKING_URI": getattr(base, "MLFLOW_TRACKING_URI", "file:/tmp/mlruns"),
         "MLFLOW_EXPERIMENT_NAME": getattr(base, "MLFLOW_EXPERIMENT_NAME", "restaurant_price_exp"),
         "TRAINING_DATA_SAMPLE_PATH": getattr(base, "TRAINING_DATA_SAMPLE_PATH", "data/sampled-final-data.csv"),

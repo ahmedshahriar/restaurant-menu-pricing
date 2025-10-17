@@ -89,7 +89,7 @@ def _install_cli_stubs():
         "N_TRIALS": 3,
         "CV_FOLDS": 2,
         "SCORING": "neg_root_mean_squared_error",
-        "BEST_MODEL_REGISTRY_NAME": "restaurant_best_model",
+        "BEST_MODEL_REGISTRY_NAME": "ubereats-menu-price-predictor",
         "MLFLOW_TRACKING_URI": "file:/tmp/mlruns",
         "MLFLOW_EXPERIMENT_NAME": "restaurant_price_exp",
         "MODEL_SERVE_PORT": 5000,
