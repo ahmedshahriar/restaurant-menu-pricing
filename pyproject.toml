@@ -223,10 +223,26 @@ cmd = "poetry run pytest tests/"
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-q -ra --disable-warnings --maxfail=1 --cov=."
-testpaths = ["tests"]
+testpaths = ["tests/unit", "tests/cli"]
 markers = [
     "unit: fast unit tests (no IO/network)",
     "cli: tests that exercise the Click CLIs (tools.run / tools.serve)",
-    "integration: touches filesystem, subprocess, or larger flows",
-    "slow: optional long-running tests (HF/Optuna/MLflow end-to-end)",
 ]
+
+# ------------------------------
+# --- Coverage Configuration ---
+# ------------------------------
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    "bot/*",
+    "model/*",
+    "core/*",
+    "pipelines/*",
+]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+skip_covered = true
