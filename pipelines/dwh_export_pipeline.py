@@ -6,7 +6,12 @@ from core import settings
 
 
 def dwh_export_pipeline():
-    """Export data from MongoDB to CSV files."""
+    """
+    Exports restaurant and menu data from the data warehouse (MongoDB) to CSV files.
+    - Output directory: settings.DWH_EXPORT_DIR
+    - Restaurant data file: settings.RESTAURANT_DATA_PATH
+    - Menu data file: settings.MENU_DATA_PATH
+    """
     # empty query to fetch all documents
     query: dict[str, Any] = {}
     # keep _id to build stable ids, drop it later

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import optuna
+from lightgbm import LGBMRegressor
 from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso, LinearRegression, Ridge
@@ -13,7 +14,7 @@ from xgboost import XGBRegressor
 
 from core.settings import settings
 
-from .spaces import dtree_space, rf_space, xgb_space
+from .spaces import dtree_space, lgbm_space, rf_space, xgb_space
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,16 @@ XGB_REG = ModelSpec(
         "random_state": settings.SEED,
     },
     param_space=xgb_space,
+)
+
+LGBM_REG = ModelSpec(
+    name="lightgbm",
+    estimator_cls=LGBMRegressor,
+    base_kwargs={
+        "n_jobs": -1,
+        "random_state": settings.SEED,
+    },
+    param_space=lgbm_space,
 )
 
 REGISTRY: dict[str, ModelSpec] = {
