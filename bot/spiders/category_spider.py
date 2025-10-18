@@ -39,7 +39,6 @@ class CategorySpider(scrapy.Spider):
     def parse(self, response, **kwargs):
         if response.status in self.handle_httpstatus_list:
             self.logger.info("Force-retrying request")
-            time.sleep(15)
             re_request = response.request.copy()
             re_request.dont_filter = True
             yield re_request
@@ -78,7 +77,7 @@ class CategorySpider(scrapy.Spider):
         region_city_dict = json_data_uber.get("queries")[2].get("state").get("data").get("regionCityLinks").get("links")
 
         all_location_links, all_location_names = [], []
-        for link_data in region_city_dict[:1]:
+        for link_data in region_city_dict:
             all_location_names.extend(li.get("title").strip() for li in link_data.get("links"))
             all_location_links.extend(
                 [
@@ -88,7 +87,7 @@ class CategorySpider(scrapy.Spider):
                 ]
             )
         loc_dict = dict(zip(all_location_links, all_location_names, strict=True))
-        yield from response.follow_all(all_location_links[:1], self.parse_category, meta={"loc_dict": loc_dict})
+        yield from response.follow_all(all_location_links, self.parse_category, meta={"loc_dict": loc_dict})
 
     def parse_category(self, response, **kwargs):
         """parse listings"""

@@ -5,8 +5,8 @@
 
 
 # useful for handling different item types with a single interface
-import pymongo
 from itemadapter import ItemAdapter
+from pymongo import ASCENDING, MongoClient, UpdateOne
 
 from .settings import MONGO_COLLECTION
 
@@ -25,12 +25,23 @@ class BotPipeline:
         )
 
     def open_spider(self, spider):
-        self.client = pymongo.MongoClient(self.mongo_uri)
+        self.client = MongoClient(self.mongo_uri, retryWrites=True)
         self.db = self.client[self.mongo_db]
+        self.db[self.collection_name].create_index([("url", ASCENDING)], unique=True)
+
+        self._buffer = []
+        self._bufsize = 500
 
     def close_spider(self, spider):
+        if self._buffer:
+            self.db[self.collection_name].bulk_write(self._buffer, ordered=False)
         self.client.close()
 
     def process_item(self, item, spider):
-        self.db[self.collection_name].insert_one(ItemAdapter(item).asdict())
+        doc = ItemAdapter(item).asdict()
+        key = {"url": doc["url"]}  # or another stable key
+        self._buffer.append(UpdateOne(key, {"$set": doc}, upsert=True))
+        if len(self._buffer) >= self._bufsize:
+            self.db[self.collection_name].bulk_write(self._buffer, ordered=False)
+            self._buffer.clear()
         return item
