@@ -57,7 +57,6 @@ class RestaurantSpiderUS(scrapy.Spider):
 
         if response.status in self.handle_httpstatus_list:
             self.logger.info("Force-retrying request")
-            time.sleep(15)
             re_request = response.request.copy()
             re_request.dont_filter = True
             yield re_request

@@ -112,6 +112,7 @@ format-fix = "poetry run ruff format ."
 
 # Web crawling ETL tasks
 # crawl restaurant locations, categories, and URLs
+
 crawl-ubereats-categories = "poetry run scrapy crawl category_us"
 
 # crawl restaurant menus and item details

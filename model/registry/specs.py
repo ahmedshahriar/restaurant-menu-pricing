@@ -121,6 +121,7 @@ REGISTRY: dict[str, ModelSpec] = {
     RF_REG.name: RF_REG,
     DTREE_REG.name: DTREE_REG,
     XGB_REG.name: XGB_REG,
+    LGBM_REG.name: LGBM_REG,
 }
 
 

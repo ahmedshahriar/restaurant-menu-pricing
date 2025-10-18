@@ -8,7 +8,6 @@ configs
 bot/spiders/test_spider.py
 datasets/
 readme-demo.md
-backups/pythonhasseed-issue.md
 
 # ignore model file
 menu-price-img/model_dir
@@ -16,6 +15,10 @@ menu-price-img/model_dir
 # IDE
 .idea
 .vscode
+
+airflow_dags
+docker
+.dockerignore
 
 # config files
 kaggle.json
