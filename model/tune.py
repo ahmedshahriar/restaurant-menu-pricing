@@ -120,7 +120,7 @@ def tune_model(
     Trial logs (child run):
       • searched hyperparameters (given hyperparameter space)
       • objective_value  -> positive MSE (= -mean(neg_MSE))  (single objective per trial)
-      • cv_mean_neg, cv_std, rmse (sqrt(objective_value)), n_splits, trial_fit_time_sec
+      • cv_mse_mean, cv_mse_std, rmse (sqrt(objective_value)), n_splits, trial_fit_time_sec
       • the trained pipeline (preprocessor + model) with a real model signature
 
     Parent logs:
@@ -152,6 +152,8 @@ def tune_model(
         def objective(trial: optuna.Trial) -> float:
             # One child run per trial (official mlflow pattern)
             with mlflow.start_run(nested=True, run_name=f"trial_{trial.number}"):
+                mlflow.set_tag("model_name", model_name)
+                mlflow.set_tag("model_flavor", "sklearn")
                 # 1) sample hyperparameters from the spec's space
                 params = model_spec.param_space(trial)
                 # 2) build the estimator with base kwargs merged with trial params
@@ -169,16 +171,16 @@ def tune_model(
                 fit_time = time.perf_counter() - t0
 
                 # scores are NEGATIVE MSE -> objective is POSITIVE MSE
-                cv_mean_neg = float(np.mean(scores))  # e.g., -123.4
-                cv_std = float(np.std(scores))
-                objective_value = -cv_mean_neg  # +123.4 (the MSE you minimize)
-                rmse = float(np.sqrt(objective_value))  # convenience for eyeballing
+                cv_mse_mean = float(np.mean(scores))  # e.g., -123.4
+                cv_mse_std = float(np.std(scores))
+                objective_value = -cv_mse_mean  # +123.4 (the MSE you minimize)
+                cv_rmse_mean = float(np.mean(np.sqrt([-s for s in scores])))
 
                 # Log a concise set of trial metrics (single objective + a few helpers)
-                # mlflow.log_metric("objective_value", objective_value)
-                mlflow.log_metric("cv_mse_mean", -cv_mean_neg)
-                mlflow.log_metric("cv_mse_std", cv_std)
-                mlflow.log_metric("cv_rmse", rmse)
+                mlflow.log_metric("objective_value", objective_value)
+                mlflow.log_metric("cv_mse_mean", -cv_mse_mean)  # positive MSE
+                mlflow.log_metric("cv_mse_std", cv_mse_std)
+                mlflow.log_metric("cv_rmse_mean", cv_rmse_mean)
                 mlflow.log_metric("n_splits", cv_folds)
                 mlflow.log_metric("trial_fit_time_sec", fit_time)
 
@@ -190,7 +192,8 @@ def tune_model(
 
                 mlflow.sklearn.log_model(
                     sk_model=pipe,
-                    name=f"model_pipeline_{model_name}_{trial.number}",  # fixed name for all trials
+                    # name=f"model_pipeline_{model_name}_{trial.number}",  # fixed name for all trials
+                    artifact_path=f"model_pipeline_{model_name}_{trial.number}",  # fixed name for all trials
                     signature=signature_ml,
                     input_example=example_in,  # also displayed in UI
                 )
@@ -209,9 +212,9 @@ def tune_model(
                         "trial": trial.number,
                         **params,
                         "objective_value": objective_value,
-                        "rmse": rmse,
-                        "cv_mean_neg": cv_mean_neg,
-                        "cv_std": cv_std,
+                        "cv_rmse_mean": cv_rmse_mean,
+                        "cv_mse_mean": -cv_mse_mean,  # positive MSE
+                        "cv_mse_std": cv_mse_std,
                         "fit_time_sec": fit_time,
                     }
                 )
@@ -229,13 +232,16 @@ def tune_model(
         # Best params & metrics
         best_params: dict[str, float | int] = study.best_params
         best_value: float = float(study.best_value)
-        # mlflow.log_params({f"best_{k}": v for k, v in best_params.items()})
-        # mlflow.log_metric("best_objective_value", best_value)
 
-        mlflow.log_params(best_params)
+        # Params: prefix to avoid collisions
+        mlflow.log_params({f"best_{k}": v for k, v in best_params.items()})
+        # Metrics
         mlflow.log_metric("best_mse", best_value)
         mlflow.log_metric("best_objective_value", best_value)
         mlflow.log_metric("best_rmse", np.sqrt(best_value))
+
+        # Useful tag
+        mlflow.set_tag("best_trial", study.best_trial.number)
 
         # Trials summary CSV (quick compare at parent level)
         if trial_rows:
@@ -281,7 +287,8 @@ def tune_model(
 
         mlflow.sklearn.log_model(
             sk_model=pipe,
-            name=artifact_path,
+            # name=artifact_path,
+            artifact_path=artifact_path,
             signature=signature,
             input_example=signature_example,
         )

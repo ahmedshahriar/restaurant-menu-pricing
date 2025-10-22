@@ -121,7 +121,7 @@ def train_and_compare(
                 cv_scores = evaluate_model(
                     n_folds=cv_folds, model=pipe, X=X_train, y=y_train, scoring_criterion=scoring_criterion
                 )
-                cv_rmse = np.sqrt(-cv_scores)
+                cv_rmse = np.sqrt(-np.array(cv_scores))  # convert to RMSE per fold
                 cv_rmse_all.append(cv_rmse)
                 labels.append(model_name)
 
@@ -142,11 +142,11 @@ def train_and_compare(
                 }
 
                 # simple inference latency on a small batch
-                batch_n = min(256, len(X_test))
+                batch_n = min(settings.BATCH_SIZE_INFER_TEST, len(X_test))
                 t0 = time.time()
                 _ = pipe.predict(X_test.iloc[:batch_n])
                 infer_ms = (time.time() - t0) / batch_n * 1000
-                metrics["avg_infer_ms_per_row"] = float(infer_ms)
+                metrics["infer_time_ms_per_row"] = float(infer_ms)
 
                 logger.info(f"Metrics for {model_name}: {metrics}")
 
@@ -178,7 +178,11 @@ def train_and_compare(
                 signature = infer_signature(signature_example, signature_out)
                 # log model
                 mlflow.sklearn.log_model(
-                    pipe, name=f"model_{model_name}", signature=signature, input_example=signature_example
+                    pipe,
+                    # name=f"model_{model_name}",
+                    artifact_path=f"model_{model_name}",
+                    signature=signature,
+                    input_example=signature_example,
                 )
 
         # ---- Parent-level comparison artifacts ----
@@ -206,16 +210,7 @@ def train_and_compare(
         mlflow.log_artifact(str(lb_csv), artifact_path="tables")
         mlflow.log_artifact(str(lb_json), artifact_path="tables")
 
-        # Simple bar chart for CV_RMSE_mean
-        plt.bar(leaderboard["model"], leaderboard["CV_RMSE_mean"])
-        plt.ylabel("CV RMSE mean (lower is better)")
-        plt.xticks(rotation=30, ha="right")
-        plt.tight_layout()
-        bar_path = Path(settings.ARTIFACT_DIR, "cv_rmse_mean_bar.png")
-        plt.savefig(bar_path)
-        plt.close()
-        mlflow.log_artifact(str(bar_path), artifact_path="plots/comparison")
-
+        # CV RMSE mean ± std bar plot
         means = leaderboard["CV_RMSE_mean"].values
         stds = leaderboard["CV_RMSE_std"].values
         models = leaderboard["model"].values
@@ -263,20 +258,41 @@ def train_and_compare(
                 else:
                     child_run_id = children[0].info.run_id
                     model_uri = f"runs:/{child_run_id}/model_{best_model_name}"
+                    # 1) Register the model (blocking wait happens inside MLflow)
                     model_version = mlflow.register_model(model_uri, name=best_model_registry_name)
+                    logger.info(f"Registered '{best_model_registry_name}' v{model_version.version} from {model_uri}")
 
-                    client.set_registered_model_tag(
-                        name=best_model_registry_name,
-                        key="problem_type",
-                        value="regression",
+                    # 2) Best-effort: set **version** tags (safer across backends)
+                    try:
+                        client.set_model_version_tag(
+                            name=best_model_registry_name,
+                            version=model_version.version,
+                            key="problem_type",
+                            value="regression",
+                        )
+                        client.set_model_version_tag(
+                            name=best_model_registry_name,
+                            version=model_version.version,
+                            key="model_type",
+                            value=best_model_name,
+                        )
+                    except Exception:
+                        logger.exception("Model registered, but failed to set version-level tags")
+
+                    # 3) Best-effort: set alias if supported
+                    try:
+                        client.set_registered_model_alias(
+                            name=best_model_registry_name, alias="champion", version=model_version.version
+                        )
+                    except Exception:
+                        logger.warning(
+                            "Model registered, but alias 'champion' could not be set (backend/version may not support aliases)"
+                        )
+
+                    logger.info(
+                        f"Registered the best model {best_model_name} as '{best_model_registry_name}' (v{model_version.version})"
                     )
-                    client.set_registered_model_tag(
-                        name=best_model_registry_name, key="model_type", value=best_model_name
-                    )
-                    client.set_registered_model_alias(
-                        name=best_model_registry_name, alias="champion", version=model_version.version
-                    )
-                    logger.info(f"Registered the best model {best_model_name} as '{best_model_registry_name}'")
+
             except Exception:
                 logger.exception("Failed to register the best model")
                 # Non-fatal: leave registration best-effort
