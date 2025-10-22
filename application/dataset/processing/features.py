@@ -22,9 +22,8 @@ def extract_ingredients_series(descriptions: pd.Series, ner_pipeline) -> pd.Seri
 
 
 # === Attach Cost of Living Index to DataFrame ===
-def attach_cost_index(df: pd.DataFrame, local_cost_index_csv: str) -> pd.DataFrame:
+def attach_cost_index(df: pd.DataFrame, df_cost_index: pd.DataFrame) -> pd.DataFrame:
     """Attach cost of living index to the dataframe based on city and state_id."""
-    df_cost_index = pd.read_csv(local_cost_index_csv)
     out = pd.merge(
         df,
         df_cost_index[["state_id", "city", "cost_of_living_index"]],

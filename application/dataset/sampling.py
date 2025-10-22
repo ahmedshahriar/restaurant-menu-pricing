@@ -100,7 +100,7 @@ def generate_training_sample(cfg: Config = _DEFAULT_CFG) -> pd.DataFrame:
     if "restaurant_id" in df_sampled.columns:
         df_sampled = df_sampled.drop(columns=["restaurant_id"])  # mirrors original
 
-    df_sampled = processing.attach_cost_index(df_sampled, cfg.COST_OF_INDEX_UPDATED_FILE)
+    df_sampled = processing.attach_cost_index(df_sampled, df_index)
     logger.info("Cost-of-living index attached")
 
     # Normalize price_range to buckets
