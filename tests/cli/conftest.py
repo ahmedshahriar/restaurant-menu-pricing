@@ -105,10 +105,21 @@ def _install_cli_stubs():
 
     # ----- no-op mlflow (if missing) -----
     if "mlflow" not in sys.modules:
-        mlflow = types.ModuleType("mlflow")
-        mlflow.set_tracking_uri = lambda *a, **k: None
-        mlflow.set_experiment = lambda *a, **k: None
+        mlflow = sys.modules.get("mlflow") or types.ModuleType("mlflow")
+        mlflow.__version__ = "2.14.0"
+        mlflow.set_tracking_uri = getattr(mlflow, "set_tracking_uri", lambda *a, **k: None)
+        mlflow.set_experiment = getattr(mlflow, "set_experiment", lambda *a, **k: None)
+
+        # some code calls mlflow.tracking.get_tracking_uri()
+        mlflow_tracking = sys.modules.get("mlflow.tracking") or types.ModuleType("mlflow.tracking")
+        if not hasattr(mlflow_tracking, "get_tracking_uri"):
+            mlflow_tracking.get_tracking_uri = lambda *a, **k: "file:/tmp/mlruns"
+        sys.modules["mlflow.tracking"] = mlflow_tracking
+        mlflow_sklearn = sys.modules.get("mlflow.sklearn") or types.ModuleType("mlflow.sklearn")
+        if not hasattr(mlflow_sklearn, "autolog"):
+            mlflow_sklearn.autolog = lambda *a, **k: None
         sys.modules["mlflow"] = mlflow
+        sys.modules["mlflow.sklearn"] = mlflow_sklearn
 
 
 @pytest.fixture

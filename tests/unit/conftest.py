@@ -28,7 +28,6 @@ def _install_minimal_stubs():
         DENSITY_FILE="density.csv",
         STATES_DS="owner/states-ds",
         STATES_FILE="states.csv",
-        COST_OF_INDEX_UPDATED_FILE="cost_index.csv",
         SAMPLED_DATA_PATH="data/sampled-final-data.csv",
         TEST_SIZE=0.2,
         SEED=33,
