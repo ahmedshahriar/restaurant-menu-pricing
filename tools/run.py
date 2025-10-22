@@ -4,7 +4,7 @@ import click
 import mlflow
 from loguru import logger
 
-from application.config import apply_global_settings
+from application.config import apply_global_settings, configure_mlflow_backend
 from application.dataset import generate_training_sample
 from core import __version__, settings
 from model import REGISTRY
@@ -173,9 +173,11 @@ def cli(
         apply_global_settings()
 
         _print_plan(models, sampled_data_path, n_trials, cv_folds, scoring, best_model_registry_name)
+
         # Setup mlflow
-        mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
+        tracking_uri = configure_mlflow_backend()
         mlflow.set_experiment(settings.MLFLOW_EXPERIMENT_NAME)
+        logger.info(f"MLflow configured. Tracking URI -> {tracking_uri}")
 
         # `models` is already a list of validated names
         logger.info(f"Running pipeline for models: {models}")

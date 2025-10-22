@@ -1,3 +1,3 @@
-from .bootstrap import apply_global_settings
+from .bootstrap import apply_global_settings, configure_mlflow_backend
 
-__all__ = ["apply_global_settings"]
+__all__ = ["apply_global_settings", "configure_mlflow_backend"]
