@@ -83,13 +83,15 @@ def _install_cli_stubs():
     sys.modules["core"] = core
 
     core_settings = sys.modules.get("core.settings") or types.ModuleType("core.settings")
+    # tests/cli/conftest.py  (inside _install_cli_stubs, in settings_values)
     settings_values = {
         "TRAINING_DATA_SAMPLE_PATH": "data/sampled-final-data.csv",
         "SAMPLED_DATA_PATH": "data/sampled-final-data.csv",
         "N_TRIALS": 3,
         "CV_FOLDS": 2,
         "SCORING": "neg_root_mean_squared_error",
-        "BEST_MODEL_REGISTRY_NAME": "ubereats-menu-price-predictor",
+        "BEST_MODEL_REGISTRY_NAME": "restaurant_best_model",
+        "MLFLOW_BACKEND": "local",  # <-- add this
         "MLFLOW_TRACKING_URI": "file:/tmp/mlruns",
         "MLFLOW_EXPERIMENT_NAME": "restaurant_price_exp",
         "MODEL_SERVE_PORT": 5000,
