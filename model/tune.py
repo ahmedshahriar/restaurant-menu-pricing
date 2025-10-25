@@ -192,8 +192,8 @@ def tune_model(
 
                 mlflow.sklearn.log_model(
                     sk_model=pipe,
-                    # name=f"model_pipeline_{model_name}_{trial.number}",  # fixed name for all trials
-                    artifact_path=f"model_pipeline_{model_name}_{trial.number}",  # fixed name for all trials
+                    # name=f"model_pipeline_{model_name}_{trial.number}",
+                    artifact_path=f"model_pipeline_{model_name}_{trial.number}",
                     signature=signature_ml,
                     input_example=example_in,  # also displayed in UI
                 )

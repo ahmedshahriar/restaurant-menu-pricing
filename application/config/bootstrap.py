@@ -83,12 +83,9 @@ def apply_global_settings() -> None:
 
     logger.info(f"Environment initialized with seed={settings.SEED}")
 
-    """
-    Configure Kaggle credentials from environment variables:
-      - KAGGLE_USERNAME
-      - KAGGLE_KEY
-    """
-
+    # Configure Kaggle credentials from environment variables:
+    #   - KAGGLE_USERNAME
+    #   - KAGGLE_KEY
     os.environ["KAGGLE_USERNAME"] = settings.KAGGLE_USERNAME
     os.environ["KAGGLE_KEY"] = settings.KAGGLE_KEY
 
@@ -109,6 +106,9 @@ def configure_mlflow_backend() -> str:
     Returns the tracking URI that was set.
     """
     import mlflow
+
+    if not settings.MLFLOW_BACKEND:
+        raise RuntimeError("MLFLOW_BACKEND is required (must be 'local' or 'azure')")
 
     backend = settings.MLFLOW_BACKEND.lower()
     logger.info(f"MLFLOW_BACKEND={backend}")

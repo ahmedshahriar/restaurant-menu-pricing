@@ -1,4 +1,5 @@
 import importlib
+import os
 import sys
 import types
 from pathlib import Path
@@ -90,8 +91,10 @@ def _install_cli_stubs():
         "N_TRIALS": 3,
         "CV_FOLDS": 2,
         "SCORING": "neg_root_mean_squared_error",
-        "BEST_MODEL_REGISTRY_NAME": "restaurant_best_model",
-        "MLFLOW_BACKEND": "local",  # <-- add this
+        # match the test's expectation:
+        "BEST_MODEL_REGISTRY_NAME": "ubereats-menu-price-predictor",
+        # force local backend for CLI tests:
+        "MLFLOW_BACKEND": "local",
         "MLFLOW_TRACKING_URI": "file:/tmp/mlruns",
         "MLFLOW_EXPERIMENT_NAME": "restaurant_price_exp",
         "MODEL_SERVE_PORT": 5000,
@@ -104,6 +107,17 @@ def _install_cli_stubs():
     core_settings.settings = SimpleNamespace(**settings_values)
     core.settings = core_settings
     sys.modules["core.settings"] = core_settings
+
+    # --- ensure hostile env vars don't override stub settings ---
+    for k in (
+        "MLFLOW_BACKEND",
+        "AZURE_SUBSCRIPTION_ID",
+        "AZURE_RESOURCE_GROUP",
+        "AZURE_ML_WORKSPACE_NAME",
+        "MLFLOW_TRACKING_URI",
+        "MLFLOW_TRACKING_TOKEN",
+    ):
+        os.environ.pop(k, None)
 
     # ----- no-op mlflow (if missing) -----
     if "mlflow" not in sys.modules:
