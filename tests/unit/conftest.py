@@ -21,13 +21,14 @@ def _install_minimal_stubs():
     core_pkg = sys.modules.get("core") or types.ModuleType("core")
     core_settings_mod = sys.modules.get("core.settings") or types.ModuleType("core.settings")
 
-    settings_obj = SimpleNamespace(
+    defaults = dict(
         INDEX_DS="owner/index-ds",
         INDEX_FILE="index.csv",
         DENSITY_DS="owner/density-ds",
         DENSITY_FILE="density.csv",
         STATES_DS="owner/states-ds",
         STATES_FILE="states.csv",
+        COST_OF_INDEX_UPDATED_FILE="cost_index.csv",
         SAMPLED_DATA_PATH="data/sampled-final-data.csv",
         TEST_SIZE=0.2,
         SEED=33,
@@ -37,13 +38,23 @@ def _install_minimal_stubs():
         RESTAURANT_DATA_PATH="restaurants.csv",
         MENU_DATA_PATH="restaurant-menus.csv",
         NER_MODEL="Dizex/InstaFoodRoBERTa-NER",
+        # NOTE: intentionally NOT setting MLFLOW_BACKEND here.
     )
 
-    # expose values both ways: module-level attrs and a .settings object
-    core_settings_mod.settings = settings_obj
-    for k, v in settings_obj.__dict__.items():
-        setattr(core_settings_mod, k, v)
+    # 1) fill missing attributes on the module (don’t overwrite existing ones)
+    for k, v in defaults.items():
+        if not hasattr(core_settings_mod, k):
+            setattr(core_settings_mod, k, v)
 
+    # 2) ensure a .settings namespace exists and mirrors any missing fields
+    if not hasattr(core_settings_mod, "settings") or not isinstance(core_settings_mod.settings, SimpleNamespace):
+        core_settings_mod.settings = SimpleNamespace()
+
+    for k in defaults:
+        if not hasattr(core_settings_mod.settings, k):
+            setattr(core_settings_mod.settings, k, getattr(core_settings_mod, k))
+
+    # 3) register without replacing existing modules (prevents clobbering CLI values)
     sys.modules["core"] = core_pkg
     sys.modules["core.settings"] = core_settings_mod
     core_pkg.settings = core_settings_mod
