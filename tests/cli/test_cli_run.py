@@ -65,11 +65,28 @@ def test_cli_dry_run_prints_plan(cli_stub_state, monkeypatch):
 
 
 def test_cli_top_level_runs_autotune_pipeline(cli_stub_state, monkeypatch):
-    # --- ensure backend is local BEFORE importing tools.run ---
-    monkeypatch.delenv("MLFLOW_BACKEND", raising=False)
+    import os
+
+    import application.config.bootstrap as boot
     from core import settings as S
 
+    # 1) clear any env that could force azure
+    os.environ.pop("MLFLOW_BACKEND", None)
+    os.environ.pop("AZURE_SUBSCRIPTION_ID", None)
+    os.environ.pop("AZURE_RESOURCE_GROUP", None)
+    os.environ.pop("AZURE_ML_WORKSPACE_NAME", None)
+    os.environ.pop("MLFLOW_TRACKING_URI", None)
+    os.environ.pop("MLFLOW_TRACKING_TOKEN", None)
+
+    # 2) set on core.settings (module)
     monkeypatch.setattr(S, "MLFLOW_BACKEND", "local", raising=False)
+    #    also set on nested settings object if present
+    if hasattr(S, "settings"):
+        monkeypatch.setattr(S.settings, "MLFLOW_BACKEND", "local", raising=False)
+
+    # 3) ensure bootstrap is looking at the same settings object and value
+    monkeypatch.setattr(boot, "settings", S, raising=False)
+    monkeypatch.setattr(boot.settings, "MLFLOW_BACKEND", "local", raising=False)
 
     run_mod = _import_cli()
 

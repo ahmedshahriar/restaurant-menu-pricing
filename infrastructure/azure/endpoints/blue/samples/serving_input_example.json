@@ -1,0 +1,171 @@
+{
+  "input_data": {
+    "columns": [
+      "price_range",
+      "state_id",
+      "city",
+      "density",
+      "category",
+      "ingredients",
+      "cost_of_living_index"
+    ],
+    "data": [
+      [
+        "cheap",
+        "Utah",
+        "salt lake city",
+        699.0,
+        "Sandwiches",
+        [
+          "red onion",
+          "swiss cheese",
+          "tomato",
+          "honey mustard",
+          "roast turkey",
+          "lettuce",
+          "honey wheat bread",
+          "mayo"
+        ],
+        72.36
+      ],
+      [
+        "cheap",
+        "Texas",
+        "san antonio",
+        1231.0,
+        "Sandwiches",
+        [
+          "cucumbers",
+          "chicken",
+          "feta",
+          "hummus",
+          "artichoke hearts",
+          "red peppers"
+        ],
+        53.26
+      ],
+      [
+        "cheap",
+        "Texas",
+        "houston",
+        1399.0,
+        "Salads",
+        [
+          "hickory-smoked bacon",
+          "pepper jack cheese",
+          "veggies",
+          "baja chipotle sauce",
+          "rotisserie-style chicken",
+          "salad"
+        ],
+        56.64
+      ],
+      [
+        "cheap",
+        "Utah",
+        "salt lake city",
+        699.0,
+        "Sandwiches",
+        [
+          "american cheese",
+          "sweet onion teriyaki sauce",
+          "red onions",
+          "italian bread",
+          "green peppers",
+          "steak",
+          "sweet onion steak teriyaki"
+        ],
+        72.36
+      ],
+      [
+        "cheap",
+        "Wisconsin",
+        "madison",
+        1263.0,
+        "Wraps",
+        [
+          "baja turkey avocado",
+          "turkey",
+          "avocado",
+          "veggies",
+          "baja chipotle sauce",
+          "spinach"
+        ],
+        60.14
+      ],
+      [
+        "cheap",
+        "Texas",
+        "san antonio",
+        1231.0,
+        "Salads",
+        [
+          "cheese",
+          "steak & cheese salad",
+          "steak",
+          "greens"
+        ],
+        53.26
+      ],
+      [
+        "cheap",
+        "Wisconsin",
+        "milwaukee",
+        2369.0,
+        "Wraps",
+        [
+          "avocado",
+          "spinach wrap",
+          "hickory smoked bacon",
+          "veggies",
+          "cali steak wrap",
+          "mozzarella",
+          "steak"
+        ],
+        50.24
+      ],
+      [
+        "cheap",
+        "Virginia",
+        "richmond",
+        1484.0,
+        "Sandwiches",
+        [
+          "sesame seed bun",
+          "cheese"
+        ],
+        57.0
+      ],
+      [
+        "cheap",
+        "Texas",
+        "fort worth",
+        1016.0,
+        "Salads",
+        [
+          "cucumbers",
+          "cranberries",
+          "balsamic vinaigrette",
+          "chicken salad",
+          "provolone",
+          "tomatoes",
+          "field greens"
+        ],
+        59.43
+      ],
+      [
+        "cheap",
+        "Texas",
+        "houston",
+        1399.0,
+        "Sandwiches",
+        [
+          "brisket",
+          "bun",
+          "bbq sauce"
+        ],
+        56.64
+      ]
+    ]
+  }
+}

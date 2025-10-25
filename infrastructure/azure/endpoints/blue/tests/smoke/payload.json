@@ -1,0 +1,24 @@
+{
+  "input_data": {
+    "columns": [
+      "price_range",
+      "state_id",
+      "city",
+      "density",
+      "category",
+      "ingredients",
+      "cost_of_living_index"
+    ],
+    "data": [
+      [
+        "cheap",
+        "Texas",
+        "houston",
+        1399.0,
+        "Sandwiches",
+        ["brisket", "bun", "bbq sauce"],
+        56.64
+      ]
+    ]
+  }
+}
