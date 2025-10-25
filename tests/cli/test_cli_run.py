@@ -1,10 +1,22 @@
+import os
+
 from click.testing import CliRunner
+
+for k in (
+    "MLFLOW_BACKEND",
+    "AZURE_SUBSCRIPTION_ID",
+    "AZURE_RESOURCE_GROUP",
+    "AZURE_ML_WORKSPACE_NAME",
+    "MLFLOW_TRACKING_URI",
+    "MLFLOW_TRACKING_TOKEN",
+):
+    os.environ.pop(k, None)
 
 
 def _import_cli():
-    import tools.run as run_mod
+    import importlib
 
-    return run_mod
+    return importlib.import_module("tools.run")
 
 
 def test_cli_help(cli_stub_state):
@@ -53,19 +65,22 @@ def test_cli_dry_run_prints_plan(cli_stub_state, monkeypatch):
 
 
 def test_cli_top_level_runs_autotune_pipeline(cli_stub_state, monkeypatch):
-    run_mod = _import_cli()
-    # silence mlflow side-effects if real mlflow is present
+    # --- ensure backend is local BEFORE importing tools.run ---
+    monkeypatch.delenv("MLFLOW_BACKEND", raising=False)
     from core import settings as S
 
     monkeypatch.setattr(S, "MLFLOW_BACKEND", "local", raising=False)
 
+    run_mod = _import_cli()
+
+    # silence mlflow side-effects if real mlflow is present
     monkeypatch.setattr(run_mod.mlflow, "set_tracking_uri", lambda *a, **k: None, raising=False)
     monkeypatch.setattr(run_mod.mlflow, "set_experiment", lambda *a, **k: None, raising=False)
 
     runner = CliRunner()
     res = runner.invoke(run_mod.cli, [])
+
     assert res.exit_code == 0, res.output
-    # Ensure autotune was called with >= 2 models (defaults to all)
     assert len(cli_stub_state.autotune_calls) == 1
     call = cli_stub_state.autotune_calls[0]
     assert len(call["model_names"]) >= 2
