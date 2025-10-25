@@ -1,0 +1,38 @@
+[project]
+name = "menu-price-api"
+version = "0.1.0"
+description = "Restaurant menu price predictor api"
+authors = [
+    {name = "ahmedshahriar",email = "ahmed.shahriar.sakib@gmail.com"}
+]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi (>=0.120.0,<0.121.0)",
+    "pydantic (>=2.12.3,<3.0.0)",
+    "pydantic_settings (== 2.11.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "uvicorn[standard] (>=0.38.0,<0.39.0)",
+    "gunicorn (==23.0.0)",
+]
+
+[dependency-groups]
+dev = [
+    "pytest (>=8.4.2,<9.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+api = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+[tool.poetry.plugins."fastapi"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

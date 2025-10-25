@@ -4,6 +4,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
+    # mlflow config
+    MLFLOW_BACKEND: str | None = None  # local | azure
+    MLFLOW_TRACKING_URI: str | None = None
+    MLFLOW_EXPERIMENT_NAME: str | None = None
+
+    # --- Azure workspace IDs (used when MLFLOW_BACKEND=azure) ---
+    AZURE_SUBSCRIPTION_ID: str | None = None
+    AZURE_RESOURCE_GROUP: str | None = None
+    AZURE_ML_WORKSPACE_NAME: str | None = None
+    AZURE_UAMI_NAME: str | None = None
+
     # seed for reproducibility
     SEED: int = 33
     PYTHONHASHSEED: str = str(SEED)
@@ -16,9 +27,6 @@ class Settings(BaseSettings):
     # ---- Warnings ----
     IGNORE_DEPRECATION_WARNINGS: bool = True
     IGNORE_FUTURE_WARNINGS: bool = True
-
-    MLFLOW_TRACKING_URI: str | None = None
-    MLFLOW_EXPERIMENT_NAME: str | None = None
 
     # kaggle config
     KAGGLE_USERNAME: str | None = None
@@ -59,9 +67,6 @@ class Settings(BaseSettings):
     STATES_DS: str | None = None
     STATES_FILE: str | None = None
 
-    # cost of living index updated data path
-    COST_OF_INDEX_UPDATED_FILE: str | None = None
-
     # artifacts directory
     ARTIFACT_DIR: str | None = None
 
@@ -76,9 +81,14 @@ class Settings(BaseSettings):
     CV_FOLDS: int | None = None
     SCORING: str | None = None
 
+    # batch size for inference time during training/tuning
+    # configurable; controls timing sample size
+    BATCH_SIZE_INFER_TEST: int | None = None
+
     # final best model registry name
     # if set, the best model is registered under this name in MLflow Model Registry
     BEST_MODEL_REGISTRY_NAME: str | None = None
+    MODEL_ENDPOINT_NAME: str | None = None
 
     # model serving
     MODEL_SERVE_PORT: int = 5000

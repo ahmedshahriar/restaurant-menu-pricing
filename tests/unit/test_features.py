@@ -2,6 +2,8 @@ import pandas as pd
 
 
 def test_attach_cost_index_adds_column(tmp_cost_index_csv):
+    import pandas as pd
+
     from application.dataset.processing.features import attach_cost_index
 
     df = pd.DataFrame(
@@ -10,7 +12,9 @@ def test_attach_cost_index_adds_column(tmp_cost_index_csv):
             {"city": "san diego", "state_id": "ca", "price": 12.0},
         ]
     )
-    out = attach_cost_index(df, tmp_cost_index_csv)
+    df_cost = pd.read_csv(tmp_cost_index_csv)
+
+    out = attach_cost_index(df, df_cost)
     assert "cost_of_living_index" in out.columns
     assert out.loc[out.city.eq("appleton"), "cost_of_living_index"].iloc[0] == 92.0
 

@@ -54,7 +54,11 @@ def test_cli_dry_run_prints_plan(cli_stub_state, monkeypatch):
 
 def test_cli_top_level_runs_autotune_pipeline(cli_stub_state, monkeypatch):
     run_mod = _import_cli()
-    # silence mlflow in case it's real
+    # silence mlflow side-effects if real mlflow is present
+    from core import settings as S
+
+    monkeypatch.setattr(S, "MLFLOW_BACKEND", "local", raising=False)
+
     monkeypatch.setattr(run_mod.mlflow, "set_tracking_uri", lambda *a, **k: None, raising=False)
     monkeypatch.setattr(run_mod.mlflow, "set_experiment", lambda *a, **k: None, raising=False)
 

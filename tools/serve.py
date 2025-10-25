@@ -13,7 +13,7 @@ from core import settings
 @click.command()
 @click.option("--port", default=settings.MODEL_SERVE_PORT, show_default=True, help="Port to serve the MLflow model on.")
 def main(port: int) -> None:
-    """Serve the latest registered MLflow model locally (with robust error handling & shutdown)."""
+    """Serve the latest registered MLflow model locally (w/error handling & shutdown)."""
     os.environ["MLFLOW_TRACKING_URI"] = settings.MLFLOW_TRACKING_URI
 
     # Pre-flight: ensure `mlflow` is available on PATH

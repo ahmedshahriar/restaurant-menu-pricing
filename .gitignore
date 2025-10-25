@@ -8,6 +8,7 @@ configs
 bot/spiders/test_spider.py
 datasets/
 readme-demo.md
+milestones.md
 
 # ignore model file
 menu-price-img/model_dir

@@ -13,4 +13,4 @@ class ProxyMiddleware:
         request.headers["Proxy-Authorization"] = basic_auth_header(
             settings.get("PROXY_USER"), settings.get("PROXY_PASSWORD")
         )
-        spider.log(f"Proxy : {request.meta['proxy']}")
+        spider.log(f"Proxy: {request.meta['proxy']}")

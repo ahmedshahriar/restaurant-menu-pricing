@@ -1,0 +1,30 @@
+{
+  "dataframe_split": {
+    "columns": [
+      "price_range",
+      "state_id",
+      "city",
+      "density",
+      "category",
+      "ingredients",
+      "cost_of_living_index"
+    ],
+    "data": [[
+      "cheap",
+      "Wisconsin",
+      "appleton",
+      1156,
+      "Sandwiches",
+      [
+        "cheddar cheese",
+        "applewood smoked bacon",
+        "tomato",
+        "lettuce",
+        "bun",
+        "maplebacon aioli",
+        "chicken breast"
+      ],
+      49.94
+    ]]
+  }
+}

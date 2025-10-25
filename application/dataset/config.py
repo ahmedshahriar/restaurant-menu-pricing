@@ -14,6 +14,7 @@ class Config:
     MENUS_DS: str = "ahmedshahriarsakib/uber-eats-usa-restaurants-menus/versions/12"
     MENUS_FILE: str = "restaurant-menus.csv"
 
+    # TODO: update with latest data
     INDEX_DS: str = settings.INDEX_DS
     INDEX_FILE: str = settings.INDEX_FILE
 
@@ -23,10 +24,6 @@ class Config:
     # used to build states_name_dict
     STATES_DS: str = settings.STATES_DS
     STATES_FILE: str = settings.STATES_FILE
-
-    # TODO: update with latest
-    # updated cost-of-living index data
-    COST_OF_INDEX_UPDATED_FILE: str = settings.COST_OF_INDEX_UPDATED_FILE
 
     # TODO: add dynamic config to select categories
     # Category sampling choices

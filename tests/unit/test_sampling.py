@@ -106,25 +106,17 @@ def test_sampling_load_base_frames_smoke(monkeypatch):
 def _tiny_frames():
     """Return tiny but schema-correct frames matching load_base_frames expectations."""
     df_restaurant = pd.DataFrame(
+        [{"id": 1, "name": "A", "price_range": "$$", "full_address": "123 Main, Appleton, WI 54911"}]
+    )
+    df_menu = pd.DataFrame([{"restaurant_id": 1, "category": "Salads", "description": "Tomato & Basil", "price": 9.0}])
+    df_index = pd.DataFrame([{"state_id": "wi", "city": "appleton", "cost_of_living_index": 92.0}])
+    df_density = pd.DataFrame([{"city": "appleton", "state_id": "wi", "density": "1156"}])
+    df_states = pd.DataFrame(
         [
-            {
-                "id": 1,
-                "score": 4.5,
-                "ratings": 10,
-                "category": "House",
-                "price_range": "$$",
-                "full_address": "1 St, Appleton, WI 54911",
-                "lat": 0.0,
-                "lng": 0.0,
-            }
+            {"Abbreviation": "wi", "State": "Wisconsin"},
+            {"Abbreviation": "ca", "State": "California"},
         ]
     )
-    df_menu = pd.DataFrame(
-        [{"restaurant_id": 1, "category": "Salads", "description": "Tomato & Basil", "price": "9.0"}]
-    )
-    df_index = pd.DataFrame([{"dummy": 1}])
-    df_density = pd.DataFrame([{"city": "appleton", "state_id": "wi", "density": "1156"}])
-    df_states = pd.DataFrame([{"Abbreviation": "wi", "State": "Wisconsin"}])
     return df_restaurant, df_menu, df_index, df_density, df_states
 
 
@@ -250,11 +242,9 @@ def test_generate_training_sample_minimal(monkeypatch, tmp_path, tmp_cost_index_
     monkeypatch.setattr(proc, "clean_ingredients_column", lambda df, col="ingredients": df, raising=True)
 
     # cost index attach: read from provided CSV
-    def fake_attach_cost_index(df, path):
-        # emulate a left-merge using the tmp CSV
-        cost = pd.read_csv(path)
-        out = df.merge(cost, on=["state_id", "city"], how="left")
-        return out
+    def fake_attach_cost_index(df, df_cost):
+        # emulate a left-merge on the expected keys
+        return df.merge(df_cost, on=["state_id", "city"], how="left")
 
     monkeypatch.setattr(proc, "attach_cost_index", fake_attach_cost_index, raising=True)
 
@@ -276,7 +266,6 @@ def test_generate_training_sample_minimal(monkeypatch, tmp_path, tmp_cost_index_
         DENSITY_FILE="density.csv",
         STATES_FILE="states.csv",
         FINAL_SAMPLED_DATA_PATH=str(tmp_path / "sampled-final-data.csv"),
-        COST_OF_INDEX_UPDATED_FILE=tmp_cost_index_csv,
         # the following are read by load_base_frames; values don't matter for our fake_loader
         RESTAURANTS_DS="owner/restaurants",
         MENUS_DS="owner/menus",

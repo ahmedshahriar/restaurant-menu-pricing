@@ -1,4 +1,5 @@
 import importlib
+import os
 import sys
 import types
 from pathlib import Path
@@ -83,13 +84,17 @@ def _install_cli_stubs():
     sys.modules["core"] = core
 
     core_settings = sys.modules.get("core.settings") or types.ModuleType("core.settings")
+    # tests/cli/conftest.py  (inside _install_cli_stubs, in settings_values)
     settings_values = {
         "TRAINING_DATA_SAMPLE_PATH": "data/sampled-final-data.csv",
         "SAMPLED_DATA_PATH": "data/sampled-final-data.csv",
         "N_TRIALS": 3,
         "CV_FOLDS": 2,
         "SCORING": "neg_root_mean_squared_error",
+        # match the test's expectation:
         "BEST_MODEL_REGISTRY_NAME": "ubereats-menu-price-predictor",
+        # force local backend for CLI tests:
+        "MLFLOW_BACKEND": "local",
         "MLFLOW_TRACKING_URI": "file:/tmp/mlruns",
         "MLFLOW_EXPERIMENT_NAME": "restaurant_price_exp",
         "MODEL_SERVE_PORT": 5000,
@@ -103,12 +108,34 @@ def _install_cli_stubs():
     core.settings = core_settings
     sys.modules["core.settings"] = core_settings
 
+    # --- ensure hostile env vars don't override stub settings ---
+    for k in (
+        "MLFLOW_BACKEND",
+        "AZURE_SUBSCRIPTION_ID",
+        "AZURE_RESOURCE_GROUP",
+        "AZURE_ML_WORKSPACE_NAME",
+        "MLFLOW_TRACKING_URI",
+        "MLFLOW_TRACKING_TOKEN",
+    ):
+        os.environ.pop(k, None)
+
     # ----- no-op mlflow (if missing) -----
     if "mlflow" not in sys.modules:
-        mlflow = types.ModuleType("mlflow")
-        mlflow.set_tracking_uri = lambda *a, **k: None
-        mlflow.set_experiment = lambda *a, **k: None
+        mlflow = sys.modules.get("mlflow") or types.ModuleType("mlflow")
+        mlflow.__version__ = "2.14.0"
+        mlflow.set_tracking_uri = getattr(mlflow, "set_tracking_uri", lambda *a, **k: None)
+        mlflow.set_experiment = getattr(mlflow, "set_experiment", lambda *a, **k: None)
+
+        # some code calls mlflow.tracking.get_tracking_uri()
+        mlflow_tracking = sys.modules.get("mlflow.tracking") or types.ModuleType("mlflow.tracking")
+        if not hasattr(mlflow_tracking, "get_tracking_uri"):
+            mlflow_tracking.get_tracking_uri = lambda *a, **k: "file:/tmp/mlruns"
+        sys.modules["mlflow.tracking"] = mlflow_tracking
+        mlflow_sklearn = sys.modules.get("mlflow.sklearn") or types.ModuleType("mlflow.sklearn")
+        if not hasattr(mlflow_sklearn, "autolog"):
+            mlflow_sklearn.autolog = lambda *a, **k: None
         sys.modules["mlflow"] = mlflow
+        sys.modules["mlflow.sklearn"] = mlflow_sklearn
 
 
 @pytest.fixture
