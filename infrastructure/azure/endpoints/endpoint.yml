@@ -1,0 +1,17 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
+
+# Name and identity are set by the script via --set
+name: placeholder-endpoint
+auth_mode: aad_token
+
+# Keep as user_assigned; script sets the actual resource_id
+identity:
+  type: user_assigned
+  user_assigned_identities:
+    - resource_id: /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-placeholder/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uami-placeholder
+
+# Optional tags (can be overridden if needed)
+tags:
+  env: prod
+  service: menu-price-inference
+  owner: ahmedshahriar
