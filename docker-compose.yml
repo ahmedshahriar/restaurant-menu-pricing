@@ -1,0 +1,55 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: mongo
+    restart: unless-stopped # always restart unless stopped manually
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-root}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    restart: unless-stopped # always restart unless stopped manually
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env # loads environment variables into the container
+    volumes:
+      - ./.env:/app/.env:ro   # makes /app/.env exist for `dotenv run`
+    working_dir: /app
+    # For live editing, uncomment the bind mount:
+    # volumes:
+    #   - ./:/app
+    command: ["bash","-lc","sleep infinity"]
+    stdin_open: true
+    tty: true
+  # Azure CLI with ML and application-insights extensions
+  tools:
+    build:
+      context: .
+      dockerfile: Dockerfile.tools
+    container_name: az
+    environment:
+      - AZURE_EXTENSION_DIR=/usr/local/az-extensions
+    # Persist Azure CLI login locally (optional)
+    volumes:
+      - ./_azure:/root/.azure
+    env_file:
+      - .env
+    command: ["bash","-lc","sleep infinity"]
+
+volumes:
+  mongo-data:
