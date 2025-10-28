@@ -10,7 +10,7 @@ set -euo pipefail
 #      AZURE_RESOURCE_GROUP, AZURE_SUBSCRIPTION_ID,
 #      MODEL_ENDPOINT_NAME, BEST_MODEL_REGISTRY_NAME, AZURE_UAMI_NAME
 #  - Optional:
-#      AZURE_ML_WORKSPACE  (workspace name, if not already defaulted in your CLI)
+#      AZURE_ML_WORKSPACE  (workspace name, if not already defaulted in CLI)
 # ============================================================
 
 # -----------------------------
