@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from time import time
 from typing import Any
 
 import httpx
@@ -49,8 +50,6 @@ class AzureMLInference:
             return self._static_token
         # fetch once (or when expired)
         async with self._lock:
-            from time import time
-
             if not self._tok or not self._exp or time() > (self._exp - 120):
                 loop = asyncio.get_running_loop()
                 at = await loop.run_in_executor(None, self._cred.get_token, _AMLSCOPE := _AML_SCOPE)

@@ -15,7 +15,8 @@ dependencies = [
 
     # machine learning dependencies
     "scikit-learn>=1.7.2,<2.0.0",
-    "transformers>=4.56.2,<4.57.0", # broken metadata err v4.57.0 https://github.com/huggingface/transformers/issues/41331
+    # broken metadata err v4.57.0 https://github.com/huggingface/transformers/issues/41331
+    "transformers>=4.56.2,<4.57.0",
 
     "torch>=2.8.0,<3.0.0",
     "xgboost>=3.0.5,<4.0.0",
@@ -25,15 +26,23 @@ dependencies = [
     "optuna>=4.5.0,<5.0.0",
 
     # MLflow and integrations
-    "mlflow>=3.4.0,<4.0.0",
+    # requirement mlflow<3.0.0 to avoid dependency conflicts with AzureML
+    "mlflow (<3.0.0)",
     "optuna-integration[mlflow] (>=4.5.0,<5.0.0)",
 
     # mlflow serve dependencies
     "virtualenv (>=20.35.3,<21.0.0)",
     "fastapi (>=0.119.0,<0.120.0)",
 
+    # Azure integration dependencies
+    "azure-ai-ml (>=1.29.0,<2.0.0)", # 1.29.0
+    "azureml-mlflow (>=1.60.0.post1,<2.0.0)", # 1.60.0.post1
+    "azure-identity (>=1.25.1,<2.0.0)", # 1.25.1
+
     # CLI, logging, validation
+    "python-dotenv>=1.1.1,<2.0.0",
     "pydantic>=2.11.10,<3.0.0",
+    "pydantic-settings (>=2.11.0,<3.0.0)",
     "click (>=8.3.0,<9.0.0)",
     "loguru>=0.7.3,<0.8.0",
     "tqdm (>=4.67.1,<5.0.0)",
@@ -46,6 +55,11 @@ dependencies = [
     "notebook (>=7.4.7,<8.0.0)",
     "ipywidgets (>=8.1.7,<9.0.0)",
     "jupyter (>=1.1.1,<2.0.0)",
+
+    # Web app dependencies
+    "streamlit (>=1.50.0,<2.0.0)",
+    "requests (>=2.32.5,<3.0.0)",
+    "clear (>=2.0.0,<3.0.0)",
 ]
 
 # OS-specific TensorFlow variants
@@ -63,7 +77,6 @@ package-mode = false
 ruff = "0.13.3"
 pytest = "8.4.2"
 pre-commit = "4.3.0"
-python-dotenv = "^1.1.1"
 pytest-cov = "^7.0.0"
 
 [build-system]
@@ -96,6 +109,10 @@ known-first-party = ["application", "core"]
 # --- Poe the Poet Configuration ---
 # ----------------------------------
 
+[tool.poe.env]
+# Environment variables for API scoring tasks
+PAYLOAD = "tests/payloads/payload.json"
+
 [tool.poe.tasks]
 hello = "echo 'Hello from Poe the Poet 👋'"
 
@@ -112,7 +129,6 @@ format-fix = "poetry run ruff format ."
 
 # Web crawling ETL tasks
 # crawl restaurant locations, categories, and URLs
-
 crawl-ubereats-categories = "poetry run scrapy crawl category_us"
 
 # crawl restaurant menus and item details
@@ -123,54 +139,27 @@ crawl-ubereats = "poetry run scrapy crawl restaurant_us"
 # -------------------------------------------------
 
 # DWH export pipeline
+# Exports raw restaurant and menu data from the data warehouse (MongoDB) to CSV files.
 dwh-export = "dotenv run python -m tools.run dwh-export"
 
 # generate a sample training dataset from the crawled data (stored in Kaggle)
 generate-train-sample = "dotenv run python -m tools.run generate-train-sample"
 
-# -------------------
-# --- Model Serve ---
-# -------------------
+# --------------------------
+# --- MLFlow Model Serve ---
+# --------------------------
 
-# serve the trained model locally using MLflow
+# serve the trained model latest version using MLflow
 # change port number if needed
 serve-model-local = "poetry run python -m tools.serve --port 5000"
 
 # Example curl command to call the served model
 # change port number if needed
-call-inference = '''
-curl http://127.0.0.1:5000/invocations -H "Content-Type: application/json" --data
-  '{
-    "dataframe_split": {
-      "columns": [
-        "price_range",
-        "state_id",
-        "city",
-        "density",
-        "category",
-        "ingredients",
-        "cost_of_living_index"
-      ],
-      "data": [[
-        "cheap",
-        "Wisconsin",
-        "appleton",
-        1156,
-        "Sandwiches",
-        [
-          "cheddar cheese",
-          "applewood smoked bacon",
-          "tomato",
-          "lettuce",
-          "bun",
-          "maplebacon aioli",
-          "chicken breast"
-        ],
-        49.94
-      ]]
-    }
-  }'
-'''
+call-inference-local = """
+curl http://127.0.0.1:5000/invocations \
+  -H "Content-Type: application/json" \
+  --data @tests/payloads/call-inference-local.json
+"""
 
 # -----------------------------------------------------
 # --- ML Modelling (Training -> Tuning -> Register) ---
@@ -214,10 +203,239 @@ help = "Quick development run with minimal Optuna trials and CV folds"
 cmd = "dotenv run python -m tools.run --n-trials 50 --cv-folds 5"
 help = "Full production-grade run with more trials and folds"
 
+# -------------------
+# --- Azure Tasks ---
+# -------------------
+
+# ====================================
+# Azure ML – Deploy: Blue/Green/Canary
+# ====================================
+
+# ---- Deploy ----
+# deploy to azure blue deployment slot
+[tool.poe.tasks.deploy-blue]
+cmd  = "bash ./scripts/deploy/deploy_endpoint_blue.sh"
+help = "Deploy the application to the Azure blue deployment slot + endpoint (idempotent)"
+
+# Optional dry-run preview
+[tool.poe.tasks.deploy-blue-dry]
+cmd  = "bash ./scripts/deploy/deploy_endpoint_blue.sh --dry-run"
+help = "DRY-RUN: show BLUE deploy plan without changing anything"
+
+# smoke test against the blue endpoint
+# uses the test payload from
+# infrastructure/azure/endpoints/blue/tests/smoke/ and infrastructure/azure/endpoints/blue/samples/ directories
+[tool.poe.tasks.smoke-blue]
+cmd  = "bash ./infrastructure/azure/endpoints/blue/tests/smoke/run.sh"
+help = "Run smoke test against the blue endpoint"
+
+# deploy to azure green deployment slot
+[tool.poe.tasks.deploy-green]
+cmd  = "bash ./scripts/deploy/deploy_endpoint_green.sh"
+help = "Deploy the application to the Azure green deployment slot + endpoint (idempotent)"
+
+# Optional dry-run preview
+[tool.poe.tasks.deploy-green-dry]
+cmd  = "bash ./scripts/deploy/deploy_endpoint_green.sh --dry-run"
+help = "DRY-RUN: show GREEN deploy plan without changing anything"
+
+# smoke test against the green endpoint
+# uses the test payload from
+# infrastructure/azure/endpoints/green/tests/smoke/ and infrastructure/azure/endpoints/green/samples/ directories
+[tool.poe.tasks.smoke-green]
+cmd  = "bash ./infrastructure/azure/endpoints/green/tests/smoke/run.sh"
+help = "Run smoke test against the green endpoint"
+
+# =============================
+# --- Azure Autoscale Tasks ---
+# =============================
+
+# ---- Scale ----
+# Run autoscale attach for blue deployment
+[tool.poe.tasks.apply-autoscale-blue]
+cmd  = "bash ./scripts/scale/apply_autoscale_blue.sh"
+help = "Attach/verify Azure Monitor Autoscale for BLUE"
+
+# Optional dry-run preview
+[tool.poe.tasks.apply-autoscale-blue-dry]
+cmd  = "bash ./scripts/scale/apply_autoscale_blue.sh --dry-run"
+help = "DRY-RUN: show autoscale what-if for BLUE only"
+
+# Run autoscale attach for green deployment
+[tool.poe.tasks.apply-autoscale-green]
+cmd  = "bash ./scripts/scale/apply_autoscale_green.sh"
+help = "Attach/verify Azure Monitor Autoscale for GREEN"
+
+# Optional dry-run preview
+[tool.poe.tasks.apply-autoscale-green-dry]
+cmd  = "bash ./scripts/scale/apply_autoscale_green.sh --dry-run"
+help = "DRY-RUN: show autoscale what-if for GREEN only"
+
+# =================================
+# --- Rollout blue/green/canary ---
+# =================================
+
+# ---- Status/Traffic ----
+# Show current traffic distribution on the endpoint
+[tool.poe.tasks.show-traffic]
+cmd = "bash ./scripts/traffic/show_traffic.sh"
+help = "Print current endpoint traffic map (blue/green weights)"
+
+# Quick status snapshot of both deployments
+[tool.poe.tasks.status]
+cmd = "bash ./scripts/traffic/status.sh"
+help = "Show provisioning_state, traffic_weight, and scale settings for blue & green"
+
+# Parametrized canary step: pass desired green% (and optional blue%) after -- :
+#   poetry poe set-traffic 25         # sets green=25, blue=75
+#   poetry poe set-traffic 50 50      # sets green=50, blue=50
+[tool.poe.tasks.set-traffic]
+cmd = "bash ./scripts/traffic/set_traffic.sh"
+help = "Set traffic split (usage: poetry poe set-traffic <GREEN%> [BLUE%])"
+
+# Promote: smoke test, 100% to green, attach autoscale, show final split
+[tool.poe.tasks.promote-green]
+cmd = "bash ./scripts/traffic/promote_green.sh"
+help = "Cut over all traffic to GREEN (with smoke + autoscale)"
+
+# Rollback instantly to blue
+[tool.poe.tasks.rollback-blue]
+cmd = "bash ./scripts/traffic/rollback_blue.sh"
+help = "Instant rollback: 100% to BLUE"
+
+# Opinionated canary stages (uses set_traffic + smoke in a loop)
+# tests latency and if approved, continues to next step
+# Example usage:
+#   default: poetry poe rollout-green-canary
+# with custom steps:
+#   STEPS="10 30 60 100" poetry poe rollout-green-canary
+# dry run:
+#   poetry poe rollout-green-canary-dry-run
+# dry run + custom steps:
+#   STEPS="5 10 25 50 100" poetry poe rollout-green-canary-dry-run
+# dry run with smoke:
+#   WAIT_SEC=10 SMOKE_CMD="poetry poe smoke-green -- --fast" poetry poe rollout-green-canary-dry-run
+[tool.poe.tasks.rollout-green-canary]
+cmd  = "bash ./scripts/traffic/rollout_green_canary.sh"
+help = "Canary rollout green across steps (override with env: STEPS=\"5 10 25 50 100\")"
+
+[tool.poe.tasks.rollout-green-canary-dry-run]
+cmd  = "bash ./scripts/traffic/rollout_green_canary.sh"
+help = "Preview the canary rollout without changing traffic"
+[tool.poe.tasks.rollout-green-canary-dry-run.env]
+DRY_RUN = "1"
+
+# Fetch and show the scoring URI of the deployed endpoint
+[tool.poe.tasks.show-endpoint-uri]
+cmd  = "bash ./scripts/endpoint/show_endpoint_uri.sh"
+help = "Print the Azure ML endpoint scoring URI (non-secret)"
+
+# ---------------------------------
+# --- Scoring API Tasks (Local) ---
+# ---------------------------------
+[tool.poe.tasks.api-run]
+cmd  = "uvicorn app.main:app --reload --port 8000"
+cwd  = "services/api"
+help = "Run the FastAPI scoring API locally"
+
+[tool.poe.tasks.api-score]
+cmd  = "curl -X POST http://127.0.0.1:8000/api/v1/score -H 'Content-Type: application/json' -d @${PAYLOAD}"
+cwd  = "services/api"
+help = "POST a payload to the local API"
+
+[tool.poe.tasks.api-test]
+cmd  = "pytest -q"
+cwd  = "services/api"
+help = "Run API unit tests (uses services/api/pytest config)"
+
+[tool.poe.tasks.api-cov]
+cmd  = "pytest -q --cov=app --cov-report=term-missing"
+cwd  = "services/api"
+help = "Run API tests with coverage of the app package"
+
+
+# --------------------------------------
+# --- Scoring API Tasks (Azure APIM) ---
+# --------------------------------------
+
+# score via API Management (default deployment)
+[tool.poe.tasks.apim-score]
+envfile = "services/common/.env.azure"
+cmd = """
+curl -sS -X POST "https://${APIM_HOST}/aml/score" \
+  -H "Ocp-Apim-Subscription-Key: ${APIM_KEY}" \
+  -H "Content-Type: application/json" \
+  --data "@${PAYLOAD}"
+"""
+cwd  = "services/api"
+help = "Score via APIM (uses APIM_HOST & APIM_KEY)."
+
+# score via APIM, pin the green deployment
+[tool.poe.tasks.apim-score-green]
+envfile = "services/common/.env.azure"
+cmd = """
+curl -sS -X POST "https://${APIM_HOST}/aml/score" \
+  -H "Ocp-Apim-Subscription-Key: ${APIM_KEY}" \
+  -H "azureml-model-deployment: green" \
+  -H "Content-Type: application/json" \
+  --data "@${PAYLOAD}"
+"""
+cwd  = "services/api"
+help = "Score via APIM, pin the green deployment."
+
+# score via APIM, pin the blue deployment
+[tool.poe.tasks.apim-score-blue]
+envfile = "services/common/.env.azure"
+cmd = """
+curl -sS -X POST "https://${APIM_HOST}/aml/score" \
+  -H "Ocp-Apim-Subscription-Key: ${APIM_KEY}" \
+  -H "azureml-model-deployment: blue" \
+  -H "Content-Type: application/json" \
+  --data "@${PAYLOAD}"
+"""
+cwd  = "services/api"
+help = "Score via APIM, pin the blue deployment."
+
+# trace headers for debugging
+[tool.poe.tasks.apim-trace]
+envfile = "services/common/.env.azure"
+cmd = """
+curl -i -sS -X POST "https://${APIM_HOST}/aml/score" \
+  -H "Ocp-Apim-Subscription-Key: ${APIM_KEY}" \
+  -H "Ocp-Apim-Trace: true" \
+  -H "Content-Type: application/json" \
+  --data "@${PAYLOAD}"
+"""
+cwd  = "services/api"
+help = "Score via APIM and return APIM trace headers for debugging."
+
+# API Management run the Streamlit Front-end
+[tool.poe.tasks.apim-ui]
+envfile = "services/common/.env.azure"
+cmd  = "streamlit run services/ui/app.py --server.port 8501 --server.address 0.0.0.0"
+help = "Run the Streamlit UI"
+
+# delete a specific deployment (blue or green)
+[tool.poe.tasks.delete-deployment]
+cmd = "bash ./scripts/endpoint/delete_deployment.sh ${args}"
+help = "Delete a specific deployment (usage: poe delete-deployment blue or poe delete-deployment green)"
+
+# delete the endpoint
+# this also deletes both deployments under the endpoint
+[tool.poe.tasks.delete-endpoint]
+cmd = "bash ./scripts/endpoint/delete_endpoint.sh ${args}"
+help = "Delete the Azure ML endpoint and both deployments (usage: poetry poe delete-endpoint <endpoint-name>) "
+
+# delete the entire Azure resource group
+[tool.poe.tasks.delete-rg]
+cmd = "bash ./scripts/infra/delete_resource_group.sh ${args}"
+help = "Delete the Azure resource group and everything inside it (usage: poetry poe delete-resource-group <resource-group>)"
+
 # -------------
 # --- Tests ---
 # -------------
 
+# global test task
 [tool.poe.tasks.test]
 cmd = "poetry run pytest tests/"
 
@@ -243,6 +461,8 @@ omit = [
     "tests/*",
     "bot/*",
     "model/*",
+    "services/*",
+    "infrastructure/azure/*",
 ]
 
 [tool.coverage.report]
