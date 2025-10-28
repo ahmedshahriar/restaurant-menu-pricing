@@ -119,7 +119,7 @@ fi
 # -----------------------------
 echo "🚀 Ensuring endpoint exists: $MODEL_ENDPOINT_NAME"
 if az ml online-endpoint show -n "$MODEL_ENDPOINT_NAME" -g "$AZURE_RESOURCE_GROUP" "${ws_args[@]}" >/dev/null 2>&1; then
-  echo "ℹ️  Endpoint exists → skipping update"
+  echo "ℹ️  Endpoint exists → skipping all modifications (no update attempted)"
 else
   echo "ℹ️  Endpoint not found → creating"
   az ml online-endpoint create \
@@ -153,11 +153,6 @@ echo "🔎 Verifying endpoint..."
 az ml online-endpoint show \
   -n "$MODEL_ENDPOINT_NAME" -g "$AZURE_RESOURCE_GROUP" "${ws_args[@]}" \
   --query "{name:name,auth_mode:auth_mode,provisioning_state:provisioning_state,traffic:traffic}" -o json
-
-# optional step: if no traffic is set, set all to blue
-if [[ "$(az ml online-endpoint show -n "$MODEL_ENDPOINT_NAME" --query 'traffic' -o tsv)" == "" ]]; then
-  az ml online-endpoint update -n "$MODEL_ENDPOINT_NAME" --traffic blue=100
-fi
 
 echo "🔎 Verifying deployment..."
 az ml online-deployment show \

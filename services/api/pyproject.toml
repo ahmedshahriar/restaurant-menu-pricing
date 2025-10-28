@@ -16,6 +16,7 @@ dependencies = [
     "httpx (>=0.28.1,<0.29.0)",
     "uvicorn[standard] (>=0.38.0,<0.39.0)",
     "gunicorn (==23.0.0)",
+    "azure-identity (>=1.25.1,<2.0.0)",
 ]
 
 [dependency-groups]
