@@ -10,7 +10,7 @@ set -euo pipefail
 #      AZURE_RESOURCE_GROUP, AZURE_SUBSCRIPTION_ID,
 #      MODEL_ENDPOINT_NAME, BEST_MODEL_REGISTRY_NAME, AZURE_UAMI_NAME
 #  - Optional:
-#      AZURE_ML_WORKSPACE  (workspace name, if not already defaulted in your CLI)
+#      AZURE_ML_WORKSPACE  (workspace name, if not already defaulted in CLI)
 # ============================================================
 
 # -----------------------------
@@ -43,7 +43,7 @@ need MODEL_ENDPOINT_NAME
 need BEST_MODEL_REGISTRY_NAME
 need AZURE_UAMI_NAME
 
-# Optional: workspace (if your az defaults already set, you can omit)
+# Optional: workspace (if az defaults already set, you can omit)
 WORKSPACE_NAME="${AZURE_ML_WORKSPACE_NAME:-}"
 
 # Constants / paths
@@ -71,7 +71,7 @@ fi
 # Resolve numeric "latest" model version
 # -----------------------------
 echo "🔎 Resolving latest version for model: ${BEST_MODEL_REGISTRY_NAME}"
-# If your model lives in the workspace registry (normal case):
+# If the model lives in the workspace registry (normal case):
 MODEL_VERSION="$(az ml model list \
   -g "$AZURE_RESOURCE_GROUP" \
   "${ws_args[@]}" \
@@ -119,7 +119,7 @@ fi
 # -----------------------------
 echo "🚀 Ensuring endpoint exists: $MODEL_ENDPOINT_NAME"
 if az ml online-endpoint show -n "$MODEL_ENDPOINT_NAME" -g "$AZURE_RESOURCE_GROUP" "${ws_args[@]}" >/dev/null 2>&1; then
-  echo "ℹ️  Endpoint exists → skipping update"
+  echo "ℹ️  Endpoint exists → skipping all modifications (no update attempted)"
 else
   echo "ℹ️  Endpoint not found → creating"
   az ml online-endpoint create \
@@ -153,11 +153,6 @@ echo "🔎 Verifying endpoint..."
 az ml online-endpoint show \
   -n "$MODEL_ENDPOINT_NAME" -g "$AZURE_RESOURCE_GROUP" "${ws_args[@]}" \
   --query "{name:name,auth_mode:auth_mode,provisioning_state:provisioning_state,traffic:traffic}" -o json
-
-# optional step: if no traffic is set, set all to blue
-if [[ "$(az ml online-endpoint show -n "$MODEL_ENDPOINT_NAME" --query 'traffic' -o tsv)" == "" ]]; then
-  az ml online-endpoint update -n "$MODEL_ENDPOINT_NAME" --traffic blue=100
-fi
 
 echo "🔎 Verifying deployment..."
 az ml online-deployment show \

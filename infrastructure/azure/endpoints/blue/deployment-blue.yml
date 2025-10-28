@@ -23,7 +23,6 @@ readiness_probe:
   period: 10
 app_insights_enabled: true
 
-# No code_configuration for blue (as requested)
 # code_configuration:
 #   code: ./src
 #   scoring_script: score.py

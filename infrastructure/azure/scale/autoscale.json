@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.2",
+  "parameters": {
+    "targetResourceUri": { "type": "string" },
+    "autoscaleName":     { "type": "string" },
+    "location":          { "type": "string" },
+    "tags":              { "type": "object", "defaultValue": {} }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/autoscaleSettings",
+      "apiVersion": "2022-10-01",
+      "name": "[parameters('autoscaleName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "enabled": true,
+        "targetResourceUri": "[parameters('targetResourceUri')]",
+        "profiles": [
+          {
+            "name": "default",
+            "capacity": { "minimum": "1", "maximum": "3", "default": "1" },
+            "rules": [
+              {
+                "metricTrigger": {
+                  "metricName": "CpuUtilizationPercentage",
+                  "metricNamespace": "Microsoft.MachineLearningServices/workspaces/onlineEndpoints/deployments",
+                  "metricResourceUri": "[parameters('targetResourceUri')]",
+                  "timeGrain": "PT1M",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "statistic": "Average",
+                  "operator": "GreaterThan",
+                  "threshold": 70
+                },
+                "scaleAction": {
+                  "direction": "Increase",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT5M"
+                }
+              },
+              {
+                "metricTrigger": {
+                  "metricName": "CpuUtilizationPercentage",
+                  "metricNamespace": "Microsoft.MachineLearningServices/workspaces/onlineEndpoints/deployments",
+                  "metricResourceUri": "[parameters('targetResourceUri')]",
+                  "timeGrain": "PT1M",
+                  "timeWindow": "PT10M",
+                  "timeAggregation": "Average",
+                  "statistic": "Average",
+                  "operator": "LessThan",
+                  "threshold": 30
+                },
+                "scaleAction": {
+                  "direction": "Decrease",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT10M"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
