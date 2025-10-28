@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/azure-cli:2.77.0
+
+ENV AZURE_CORE_COLLECT_TELEMETRY=no \
+    AZURE_EXTENSION_DIR=/usr/local/az-extensions
+
+# Create a system-level extension dir and disable dynamic installs
+RUN mkdir -p "${AZURE_EXTENSION_DIR}" \
+ && az config set extension.use_dynamic_install=no
+
+# Install pinned extensions
+RUN az extension add --name application-insights --version 1.2.3 \
+ && az extension add --name ml --version 2.39.0 \
+ && az --version
+
+# sanity check
+RUN az extension list -o table
+
+CMD ["bash"]

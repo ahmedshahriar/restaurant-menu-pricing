@@ -2,6 +2,7 @@
 ._.DS_Store
 **/.DS_Store
 **/._.DS_Store
+__MACOSX
 
 # remove later
 configs
@@ -19,12 +20,13 @@ menu-price-img/model_dir
 
 airflow_dags
 docker
-.dockerignore
 
 # config files
 kaggle.json
 backups
 notes.md
+_azure
+**/.env.azure
 
 # MLflow specific
 # MLflow tracking runs directory
@@ -252,4 +254,3 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-!/application/preprocessing/transformers.py
