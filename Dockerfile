@@ -33,7 +33,7 @@ RUN poetry config installer.max-workers 20
 # Layer-caching: lockfiles first
 COPY pyproject.toml poetry.lock* ./
 
-# Install deps (include dev so `dotenv` CLI exists for your Poe tasks)
+# Install runtime deps only
 RUN poetry install --without dev --no-ansi --no-root --no-cache && \
     rm -rf ~/.cache/pypoetry/cache/ && \
     rm -rf ~/.cache/pypoetry/artifacts/

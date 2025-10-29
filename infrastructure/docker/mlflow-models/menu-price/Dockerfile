@@ -4,7 +4,6 @@ FROM python:3.11.9-slim
 RUN apt-get -y update && apt-get install -y --no-install-recommends nginx
 
 
-
 WORKDIR /opt/mlflow
 
 # Install MLflow
