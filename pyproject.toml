@@ -35,9 +35,9 @@ dependencies = [
     "fastapi (>=0.119.0,<0.120.0)",
 
     # Azure integration dependencies
-    "azure-ai-ml (>=1.29.0,<2.0.0)", # 1.29.0
-    "azureml-mlflow (>=1.60.0.post1,<2.0.0)", # 1.60.0.post1
-    "azure-identity (>=1.25.1,<2.0.0)", # 1.25.1
+    "azure-ai-ml (>=1.29.0,<2.0.0)",
+    "azureml-mlflow (>=1.60.0.post1,<2.0.0)",
+    "azure-identity (>=1.25.1,<2.0.0)",
 
     # CLI, logging, validation
     "python-dotenv>=1.1.1,<2.0.0",
@@ -139,10 +139,15 @@ crawl-ubereats = "poetry run scrapy crawl restaurant_us"
 # -------------------------------------------------
 
 # DWH export pipeline
-# Exports raw restaurant and menu data from the data warehouse (MongoDB) to CSV files.
+# Export raw restaurant & menu documents from the Data Warehouse (MongoDB) to normalized CSV files for downstream
+# publishing/consumption (as kaggle dataset).
 dwh-export = "dotenv run python -m tools.run dwh-export"
 
-# generate a sample training dataset from the crawled data (stored in Kaggle)
+# Generates a sampled, feature-enriched training dataset from the data warehouse exports published on Kaggle.
+# - Uses the Kaggle API (or `kagglehub`) to download the raw crawl export; requires `~/.kaggle/kaggle.json`
+#   or environment variables `KAGGLE_USERNAME` / `KAGGLE_KEY` for authentication.
+# - Performs deterministic sampling and light preprocessing to produce a reproducible training sample
+#   (configurable sample size, stratification, and output format).
 generate-train-sample = "dotenv run python -m tools.run generate-train-sample"
 
 # --------------------------
@@ -161,9 +166,9 @@ curl http://127.0.0.1:5000/invocations \
   --data @tests/payloads/call-inference-local.json
 """
 
-# -----------------------------------------------------
-# --- ML Modelling (Training -> Tuning -> Register) ---
-# -----------------------------------------------------
+# -----------------------------------------------------------------------
+# --- ML Modelling (Training -> Tuning -> Register to MLflow/AzureML) ---
+# -----------------------------------------------------------------------
 
 # ML pipeline tasks
 [tool.poe.tasks.run-help]
@@ -184,8 +189,7 @@ help = "Show the planned models and config without executing training"
 # Full ML pipeline: tune all models, compare, and register best one
 [tool.poe.tasks.run-pipeline]
 cmd  = "dotenv run python -m tools.run"
-help = "Run the Restaurant Menu Pricing CLI"
-#help = "Run the full pipeline (tune all models, train, compare, and register the best model)"
+help = "Run the full pipeline (tune all models, train, compare, and register the best model to AzureML/MLflow)"
 
 # Run pipeline for specific models provided as arguments
 [tool.poe.tasks.run-models]
@@ -208,38 +212,38 @@ help = "Full production-grade run with more trials and folds"
 # -------------------
 
 # ====================================
-# Azure ML – Deploy: Blue/Green/Canary
+# Azure ML – Deploy: Blue/Green
 # ====================================
 
 # ---- Deploy ----
-# deploy to azure blue deployment slot
+# deploy to azure blue deployment slot and create endpoint if not exists
 [tool.poe.tasks.deploy-blue]
 cmd  = "bash ./scripts/deploy/deploy_endpoint_blue.sh"
-help = "Deploy the application to the Azure blue deployment slot + endpoint (idempotent)"
+help = "Deploy the application to the Azure blue deployment slot and create endpoint if not exists (idempotent)"
 
 # Optional dry-run preview
 [tool.poe.tasks.deploy-blue-dry]
 cmd  = "bash ./scripts/deploy/deploy_endpoint_blue.sh --dry-run"
 help = "DRY-RUN: show BLUE deploy plan without changing anything"
 
-# smoke test against the blue endpoint
+# smoke test against the blue deployment
 # uses the test payload from
 # infrastructure/azure/endpoints/blue/tests/smoke/ and infrastructure/azure/endpoints/blue/samples/ directories
 [tool.poe.tasks.smoke-blue]
 cmd  = "bash ./infrastructure/azure/endpoints/blue/tests/smoke/run.sh"
 help = "Run smoke test against the blue endpoint"
 
-# deploy to azure green deployment slot
+# deploy to azure green deployment slot and create endpoint if not exists
 [tool.poe.tasks.deploy-green]
 cmd  = "bash ./scripts/deploy/deploy_endpoint_green.sh"
-help = "Deploy the application to the Azure green deployment slot + endpoint (idempotent)"
+help = "Deploy the application to the Azure green deployment slot and create endpoint if not exists (idempotent)"
 
 # Optional dry-run preview
 [tool.poe.tasks.deploy-green-dry]
 cmd  = "bash ./scripts/deploy/deploy_endpoint_green.sh --dry-run"
 help = "DRY-RUN: show GREEN deploy plan without changing anything"
 
-# smoke test against the green endpoint
+# smoke test against the green deployment
 # uses the test payload from
 # infrastructure/azure/endpoints/green/tests/smoke/ and infrastructure/azure/endpoints/green/samples/ directories
 [tool.poe.tasks.smoke-green]
@@ -251,7 +255,7 @@ help = "Run smoke test against the green endpoint"
 # =============================
 
 # ---- Scale ----
-# Run autoscale attach for blue deployment
+# Attach autoscale for blue deployment
 [tool.poe.tasks.apply-autoscale-blue]
 cmd  = "bash ./scripts/scale/apply_autoscale_blue.sh"
 help = "Attach/verify Azure Monitor Autoscale for BLUE"
@@ -259,9 +263,9 @@ help = "Attach/verify Azure Monitor Autoscale for BLUE"
 # Optional dry-run preview
 [tool.poe.tasks.apply-autoscale-blue-dry]
 cmd  = "bash ./scripts/scale/apply_autoscale_blue.sh --dry-run"
-help = "DRY-RUN: show autoscale what-if for BLUE only"
+help = "DRY-RUN: show autoscale preview (what-if) for BLUE only"
 
-# Run autoscale attach for green deployment
+# Attach autoscale for green deployment
 [tool.poe.tasks.apply-autoscale-green]
 cmd  = "bash ./scripts/scale/apply_autoscale_green.sh"
 help = "Attach/verify Azure Monitor Autoscale for GREEN"
@@ -269,7 +273,7 @@ help = "Attach/verify Azure Monitor Autoscale for GREEN"
 # Optional dry-run preview
 [tool.poe.tasks.apply-autoscale-green-dry]
 cmd  = "bash ./scripts/scale/apply_autoscale_green.sh --dry-run"
-help = "DRY-RUN: show autoscale what-if for GREEN only"
+help = "DRY-RUN: show autoscale preview (what-if) for GREEN only"
 
 # =================================
 # --- Rollout blue/green/canary ---
@@ -286,17 +290,18 @@ help = "Print current endpoint traffic map (blue/green weights)"
 cmd = "bash ./scripts/traffic/status.sh"
 help = "Show provisioning_state, traffic_weight, and scale settings for blue & green"
 
-# Parametrized canary step: pass desired green% (and optional blue%) after -- :
-#   poetry poe set-traffic 25         # sets green=25, blue=75
-#   poetry poe set-traffic 50 50      # sets green=50, blue=50
+# Parametrized canary step: pass desired green% (and optional blue%)
+# Usage:
+#   poetry poe set-traffic 25         --> (sets green=25, blue=75)
+#   poetry poe set-traffic 50 50      --> (sets green=50, blue=50)
 [tool.poe.tasks.set-traffic]
 cmd = "bash ./scripts/traffic/set_traffic.sh"
 help = "Set traffic split (usage: poetry poe set-traffic <GREEN%> [BLUE%])"
 
-# Promote: smoke test, 100% to green, attach autoscale, show final split
+# Promote: smoke test, 100% to green, attach autoscale if not exists, show final traffic split for blue/green
 [tool.poe.tasks.promote-green]
 cmd = "bash ./scripts/traffic/promote_green.sh"
-help = "Cut over all traffic to GREEN (with smoke + autoscale)"
+help = "Cut over all traffic to GREEN (with smoke and attach autoscale if not exists)"
 
 # Rollback instantly to blue
 [tool.poe.tasks.rollback-blue]
@@ -353,10 +358,9 @@ cmd  = "pytest -q --cov=app --cov-report=term-missing"
 cwd  = "services/api"
 help = "Run API tests with coverage of the app package"
 
-
-# --------------------------------------
-# --- Scoring API Tasks (Azure APIM) ---
-# --------------------------------------
+# ======================================
+# === Scoring API Tasks (Azure APIM) ===
+# ======================================
 
 # score via API Management (default deployment)
 [tool.poe.tasks.apim-score]
@@ -412,7 +416,7 @@ help = "Score via APIM and return APIM trace headers for debugging."
 # API Management run the Streamlit Front-end
 [tool.poe.tasks.apim-ui]
 envfile = "services/common/.env.azure"
-cmd  = "streamlit run services/ui/app.py --server.port 8501 --server.address 0.0.0.0"
+cmd  = "streamlit run services/ui/app.py --server.port 8501 --server.address 127.0.0.1"
 help = "Run the Streamlit UI"
 
 # delete a specific deployment (blue or green)

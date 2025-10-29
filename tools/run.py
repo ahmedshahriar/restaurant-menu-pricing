@@ -203,7 +203,7 @@ def cli(
 @cli.command("generate-train-sample")
 def generate():
     """
-    Generates a sampled, feature-enriched training dataset from the data warehouse.
+    Generates a sampled, feature-enriched training dataset from the published data warehouse exports on Kaggle.
 
     \b
     - Output: {settings.TRAINING_DATA_SAMPLE_PATH}
@@ -231,7 +231,8 @@ def generate():
 @cli.command("dwh-export")
 def dwh_export():
     """
-    Exports raw restaurant and menu data from the data warehouse (MongoDB) to CSV files.
+    Exports raw restaurant and menu data from the data warehouse (MongoDB) to normalized CSV files for
+    downstream publishing/consumption.
 
     \b
     - Output directory: {settings.DWH_EXPORT_DIR}

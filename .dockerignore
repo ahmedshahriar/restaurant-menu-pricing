@@ -80,6 +80,7 @@ docker-compose*.yaml
 tests
 infrastructure/azure/**/samples/
 infrastructure/azure/**/tests/
+infrastructure/docker
 services/api/tests/
 
 # Project-local extras (remove if you actually need them in image)

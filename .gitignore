@@ -19,7 +19,8 @@ menu-price-img/model_dir
 .vscode
 
 airflow_dags
-docker
+infrastructure/docker/mlflow-models/menu-price/model_dir
+infrastructure/docker/scrapy-runner
 
 # config files
 kaggle.json

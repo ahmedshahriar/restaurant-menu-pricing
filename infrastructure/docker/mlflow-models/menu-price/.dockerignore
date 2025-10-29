@@ -1,0 +1,14 @@
+# Ignore everything by default
+*
+
+!Dockerfile
+!model_dir/
+!README.md
+
+# Safety: ignore potential clutter
+__pycache__/
+*.pyc
+*.log
+*.env
+*.ipynb
+.DS_Store
