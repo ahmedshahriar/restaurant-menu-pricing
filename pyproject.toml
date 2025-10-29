@@ -116,23 +116,32 @@ PAYLOAD = "tests/payloads/payload.json"
 [tool.poe.tasks]
 hello = "echo 'Hello from Poe the Poet 👋'"
 
-lint-check = "poetry run ruff check ."
-format-check = "poetry run ruff format --check ."
-lint-fix = "poetry run ruff check --fix ."
-format-fix = "poetry run ruff format ."
+# -------------
+# Code Quality
+# -------------
+lint-check   = { cmd = "poetry run ruff check .",             help = "Run static analysis (Ruff)." }
+format-check = { cmd = "poetry run ruff format --check .",    help = "Verify code formatting (Ruff)." }
+lint-fix     = { cmd = "poetry run ruff check --fix .",       help = "Autofix lint issues (Ruff)." }
+format-fix   = { cmd = "poetry run ruff format .",            help = "Apply code formatting (Ruff)." }
 
 # command must be run from the project root directory
 
-# ---------------------------------------------
-# --- Web Crawling to NoSQL Data Store/Json ---
-# ---------------------------------------------
+# ---------------------------------------------------
+# --- Web Crawling (ETL) to NoSQL Data Store/Json ---
+# ---------------------------------------------------
+
+# Tip: switch to `dotenv run` if your crawlers depend on `.env` values.
 
 # Web crawling ETL tasks
 # crawl restaurant locations, categories, and URLs
-crawl-ubereats-categories = "poetry run scrapy crawl category_us"
+[tool.poe.tasks.crawl-ubereats-categories]
+cmd  = "poetry run scrapy crawl category_us"
+help = "Crawl UberEats categories, locations, and listing URLs (US)."
 
 # crawl restaurant menus and item details
-crawl-ubereats = "poetry run scrapy crawl restaurant_us"
+[tool.poe.tasks.crawl-ubereats]
+cmd  = "poetry run scrapy crawl restaurant_us"
+help = "Crawl UberEats restaurant menus and item details (US)."
 
 # -------------------------------------------------
 # --- Export & Sampling from Crawled data store ---
@@ -141,30 +150,38 @@ crawl-ubereats = "poetry run scrapy crawl restaurant_us"
 # DWH export pipeline
 # Export raw restaurant & menu documents from the Data Warehouse (MongoDB) to normalized CSV files for downstream
 # publishing/consumption (as kaggle dataset).
-dwh-export = "dotenv run python -m tools.run dwh-export"
+[tool.poe.tasks.dwh-export]
+cmd  = "dotenv run python -m tools.run dwh-export"
+help = "Export DWH (MongoDB) → normalized CSV."
 
 # Generates a sampled, feature-enriched training dataset from the data warehouse exports published on Kaggle.
 # - Uses the Kaggle API (or `kagglehub`) to download the raw crawl export; requires `~/.kaggle/kaggle.json`
 #   or environment variables `KAGGLE_USERNAME` / `KAGGLE_KEY` for authentication.
 # - Performs deterministic sampling and light preprocessing to produce a reproducible training sample
 #   (configurable sample size, stratification, and output format).
-generate-train-sample = "dotenv run python -m tools.run generate-train-sample"
+[tool.poe.tasks.generate-train-sample]
+cmd  = "dotenv run python -m tools.run generate-train-sample"
+help = "Create reproducible training sample from Kaggle export."
 
-# --------------------------
-# --- MLFlow Model Serve ---
-# --------------------------
+# ----------------------------
+# --- MLFlow Model Serving ---
+# ----------------------------
 
 # serve the trained model latest version using MLflow
 # change port number if needed
-serve-model-local = "poetry run python -m tools.serve --port 5000"
+[tool.poe.tasks.serve-model-local]
+cmd  = "poetry run python -m tools.serve --port 5000"
+help = "Serve the latest model locally on port 5000."
 
 # Example curl command to call the served model
 # change port number if needed
-call-inference-local = """
+[tool.poe.tasks.call-inference-local]
+cmd  = """
 curl http://127.0.0.1:5000/invocations \
   -H "Content-Type: application/json" \
   --data @tests/payloads/call-inference-local.json
 """
+help = "Send example inference request to local server."
 
 # -----------------------------------------------------------------------
 # --- ML Modelling (Training -> Tuning -> Register to MLflow/AzureML) ---
@@ -416,7 +433,7 @@ help = "Score via APIM and return APIM trace headers for debugging."
 # API Management run the Streamlit Front-end
 [tool.poe.tasks.apim-ui]
 envfile = "services/common/.env.azure"
-cmd  = "streamlit run services/ui/app.py --server.port 8501 --server.address 127.0.0.1"
+cmd  = "streamlit run services/ui/app.py --server.port 8501 --server.address 0.0.0.0"
 help = "Run the Streamlit UI"
 
 # delete a specific deployment (blue or green)

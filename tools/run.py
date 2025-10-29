@@ -22,11 +22,11 @@ This tool:
 - Generates sampled datasets for model training
 - Preprocesses and transforms features
 - Performs hyperparameter tuning and model comparison
-- Registers and saves the best-performing model
+- Registers and saves the best-performing model to AzureML/MLflow Model Registry
 
 \b
 Pipeline sequence:
-ETL crawl → data warehouse → sample → preprocess → tune → ML models compare → register
+ETL crawl → data warehouse → sample → preprocess → tune → ML models compare → register to AzureMl/MLFlow
 """
 
 MODEL_CHOICES = sorted(REGISTRY.keys())
