@@ -8,6 +8,7 @@ __MACOSX
 configs
 bot/spiders/test_spider.py
 datasets/
+services/common/data
 readme-demo.md
 milestones.md
 
