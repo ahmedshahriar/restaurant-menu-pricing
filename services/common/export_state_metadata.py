@@ -37,7 +37,7 @@ df = df.drop_duplicates(subset=["state_id", "city"])  # keep first occurrence pe
 idxed = df.set_index(["state_id", "city"])[["density", "cost_of_living_index"]].sort_index()
 
 # 2) group by state (level 0), convert each subframe to dict(city -> meta)
-state_city_map = idxed.groupby(level=0).apply(lambda g: g.droplevel(0).to_dict(orient="index")).to_dict()
+state_city_map = {state: group.droplevel(0).to_dict(orient="index") for state, group in idxed.groupby(level=0)}
 
 with OUTPUT_PATH.open("w", encoding="utf-8") as f:
     json.dump(state_city_map, f, ensure_ascii=False, indent=2)

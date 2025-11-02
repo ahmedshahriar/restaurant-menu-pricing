@@ -6,4 +6,5 @@ import json
 
 from app.domain import ScoreRequest
 
-json.dump(ScoreRequest.model_json_schema(), open("payload.schema.json", "w"), indent=2)
+with open("payload.schema.json", "w") as f:
+    json.dump(ScoreRequest.model_json_schema(), f, indent=2)
