@@ -1,4 +1,6 @@
 # --- Python caches & tooling (matches at any depth) ---
+*.pyc
+*.log
 __pycache__/
 *.py[cod]
 *.pyo
@@ -7,6 +9,13 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+.poetry
+
+# Jupyter Notebook
+.ipynb_checkpoints
+.notebooks/
+notebooks/
 
 # Virtual envs & dotenvs
 .venv/
@@ -59,7 +68,7 @@ outputs/
 logs/
 models/
 
-# Large data (tune for your repo)
+# Large data (tune for the repo)
 datasets/
 *.parquet
 *.feather
@@ -76,14 +85,14 @@ tensorboard/
 docker-compose*.yml
 docker-compose*.yaml
 
-# Infra/test bloat (ensure you don't COPY from these)
+# Infra/test bloat (don't COPY from these)
 tests
 infrastructure/azure/**/samples/
 infrastructure/azure/**/tests/
 infrastructure/docker
 services/api/tests/
 
-# Project-local extras (remove if you actually need them in image)
+# Project-local extras (remove if needed them in image)
 backups/
 configs/
 readme-demo.md
@@ -95,7 +104,7 @@ airflow_dags
 # *.md
 # !README.md
 
-# Specific files you listed
+# extra project-specific ignores
 bot/spiders/test_spider.py
 milestones.md
 docker
