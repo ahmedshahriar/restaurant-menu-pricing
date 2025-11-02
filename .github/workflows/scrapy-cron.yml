@@ -1,0 +1,59 @@
+name: Scrapy Cron
+
+# FYI cron
+# ┌────────── minute (0 - 59)
+# │ ┌────────── hour (0 - 23)
+# │ │ ┌────────── day of the month (1 - 31)
+# │ │ │ ┌────────── month (1 - 12)
+# │ │ │ │ ┌────────── day of the week (0 - 6)
+# │ │ │ │ │
+# │ │ │ │ │
+# │ │ │ │ │
+# * * * * *
+
+on:
+  # Uncomment to enable scheduled execution
+  # Triggers the workflow on push to test branch or cron job
+#  push:
+#    branches: [ dev ]
+  schedule:
+    - cron: "10 3 * * *"   # daily 03:10 UTC
+  workflow_dispatch: {} # manual trigger
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      CRAWLED_TASK_DATA_PATH: ${{ github.workspace }}/${{ secrets.CRAWLED_TASK_DATA_PATH }}
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MONGO_DATABASE: ${{ secrets.MONGO_DATABASE }}
+      MONGO_COLLECTION: ${{ secrets.MONGO_COLLECTION }}
+      PROXY_HOST: ${{ secrets.PROXY_HOST }}
+      PROXY_PORT: ${{ secrets.PROXY_PORT }}
+      PROXY_USER: ${{ secrets.PROXY_USER }}
+      PROXY_PASSWORD: ${{ secrets.PROXY_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        working-directory: bot
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare data dir
+        run: mkdir -p "$(dirname "$CRAWLED_TASK_DATA_PATH")"
+
+      - name: Crawl categories -> CSV
+        working-directory: bot
+        run: scrapy crawl category_us
+
+      - name: Crawl restaurants -> MongoDB
+        working-directory: bot
+        run: scrapy crawl restaurant_us

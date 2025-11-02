@@ -3,6 +3,10 @@ name = "restaurant-menu-pricing"
 version = "0.1.0"
 description = "UberEats menu price prediction"
 authors = [{ name = "ahmedshahriar", email = "ahmed.shahriar.sakib@gmail.com" }]
+license = "Apache-2.0"
+license-files = [
+    "LICENSE",
+]
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
@@ -183,9 +187,9 @@ curl http://127.0.0.1:5000/invocations \
 """
 help = "Send example inference request to local server."
 
-# -----------------------------------------------------------------------
-# --- ML Modelling (Training -> Tuning -> Register to MLflow/AzureML) ---
-# -----------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# --- ML Modelling (Training -> Tuning -> Register to AzureML via MLflow) ---
+# ---------------------------------------------------------------------------
 
 # ML pipeline tasks
 [tool.poe.tasks.run-help]
@@ -228,9 +232,9 @@ help = "Full production-grade run with more trials and folds"
 # --- Azure Tasks ---
 # -------------------
 
-# ====================================
-# Azure ML – Deploy: Blue/Green
-# ====================================
+# =====================================
+# --- Azure ML – Deploy: Blue/Green ---
+# =====================================
 
 # ---- Deploy ----
 # deploy to azure blue deployment slot and create endpoint if not exists
@@ -352,9 +356,9 @@ DRY_RUN = "1"
 cmd  = "bash ./scripts/endpoint/show_endpoint_uri.sh"
 help = "Print the Azure ML endpoint scoring URI (non-secret)"
 
-# ---------------------------------
-# --- Scoring API Tasks (Local) ---
-# ---------------------------------
+# -----------------------------------------
+# --- Scoring Proxy API Tasks (FastAPI) ---
+# -----------------------------------------
 [tool.poe.tasks.api-run]
 cmd  = "uvicorn app.main:app --reload --port 8000"
 cwd  = "services/api"
@@ -363,7 +367,7 @@ help = "Run the FastAPI scoring API locally"
 [tool.poe.tasks.api-score]
 cmd  = "curl -X POST http://127.0.0.1:8000/api/v1/score -H 'Content-Type: application/json' -d @${PAYLOAD}"
 cwd  = "services/api"
-help = "POST a payload to the local API"
+help = "POST a payload to the proxy API"
 
 [tool.poe.tasks.api-test]
 cmd  = "pytest -q"

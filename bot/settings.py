@@ -17,6 +17,12 @@ MONGO_URI = settings.DATABASE_HOST  # Replace with your MongoDB connection strin
 MONGO_DATABASE = settings.DATABASE_NAME  # Replace with your MongoDB database name
 MONGO_COLLECTION = settings.DATABASE_COLLECTION  # Replace with your MongoDB collection name
 
+# Proxy settings
+PROXY_HOST = settings.PROXY_HOST
+PROXY_PORT = settings.PROXY_PORT
+PROXY_USER = settings.PROXY_USER
+PROXY_PASSWORD = settings.PROXY_PASSWORD
+
 ADDONS = {}
 
 
@@ -64,9 +70,10 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-# DOWNLOADER_MIDDLEWARES = {
-#    "bot.middlewares.BotDownloaderMiddleware": 543,
-# }
+DOWNLOADER_MIDDLEWARES = {
+    # "bot.middlewares.BotDownloaderMiddleware": 543,
+    "bot.proxy_middlewares.ProxyMiddleware": 350,  # add proxy middleware if needed
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -76,9 +83,9 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-    "bot.pipelines.BotPipeline": 300,
-}
+# ITEM_PIPELINES = {
+#     "bot.pipelines.BotPipeline": 300,
+# }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

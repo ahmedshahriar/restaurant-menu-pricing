@@ -14,7 +14,11 @@ class CategorySpider(scrapy.Spider):
     name = "category_us"
     allowed_domains = ["ubereats.com"]
     handle_httpstatus_list = [403, 429]
-    start_urls = ["https://www.ubereats.com/location"]
+    # You can scrape other country/location pages by changing the URL below
+    # Either crawl from the main location page or directly from a specific location page
+    # e.g., Canada: "https://www.ubereats.com/ca/location"
+    # specific city: "https://www.ubereats.com/region/ny" # New York
+    start_urls = ["https://www.ubereats.com/location"]  # US location page
     BASE_URL = "https://www.ubereats.com"
 
     # custom settings for feed export
@@ -26,6 +30,7 @@ class CategorySpider(scrapy.Spider):
             "csv": "scrapy.exporters.CsvItemExporter",
         },
         "FEED_EXPORT_ENCODING": "utf-8",
+        "ITEM_PIPELINES": {},  # disable item pipelines for this spider
     }
 
     def clean_text(self, raw_html):

@@ -73,8 +73,17 @@ STATE_CITY_FILE = CITY_DATA_DIR / "state_city_map.json"
 
 @st.cache_data
 def load_state_city_map():
-    with STATE_CITY_FILE.open("r", encoding="utf-8") as f:
-        raw = json.load(f)
+    try:
+        with STATE_CITY_FILE.open("r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except FileNotFoundError:
+        st.error(
+            f"Required file '{STATE_CITY_FILE}' not found. Please run the export script to generate it before starting the app."
+        )
+        raw = {}
+    except json.JSONDecodeError:
+        st.error(f"File '{STATE_CITY_FILE}' is not a valid JSON file. Please check or regenerate the file.")
+        raw = {}
 
     # Normalize to: {state: {city: {"density": float, "cost_of_living_index": float}}}
     norm = {}
@@ -124,9 +133,7 @@ with st.container():
         category = st.selectbox("Category", CATEGORIES, index=0)
 
         # Select state by NAME (from JSON), then city based on that state
-        state_name = st.selectbox(
-            "State", STATE_NAMES, index=STATE_NAMES.index("texas"), format_func=lambda s: s.title()
-        )
+        state_name = st.selectbox("State", STATE_NAMES, index=STATE_NAMES.index("texas"), format_func=state_format)
 
         # Cities are the keys of the nested dict for that state
         cities_for_state = sorted(STATE_CITY_MAP.get(state_name, {}).keys())

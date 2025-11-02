@@ -32,6 +32,14 @@ class RestaurantSpiderUS(scrapy.Spider):
     #     'FEED_EXPORT_ENCODING': 'utf-8',
     # }
 
+    # using pipelines to store data in MongoDB
+    custom_settings = {
+        # this will store the data in MongoDB as per the pipeline settings
+        "ITEM_PIPELINES": {
+            "core.pipelines.BotPipeline": 300,
+        },
+    }
+
     def start_requests(self):
         """
         :return: requests

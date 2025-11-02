@@ -15,11 +15,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
+  # Application
   app:
     build:
       context: .
       dockerfile: Dockerfile
+      labels:
+        org.opencontainers.image.authors: "ahmedshahriar <ahmed.shahriar.sakib@gmail.com>"
+        org.opencontainers.image.licenses: "Apache-2.0"
+        org.opencontainers.image.source: "https://github.com/ahmedshahriar/restaurant-menu-pricing"
     container_name: app
     restart: unless-stopped # always restart unless stopped manually
     depends_on:
