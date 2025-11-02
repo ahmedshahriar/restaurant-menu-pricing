@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     HUGGINGFACE_ACCESS_TOKEN: str | None = None
 
     CRAWLED_TASK_DATA_PATH: str | None = None
+    # Proxy Config for web crawling
+    PROXY_HOST: str | None = None
+    PROXY_PORT: int | None = None
+    PROXY_USER: str | None = None
+    PROXY_PASSWORD: str | None = None
 
     # MongoDB database (DWH)
     # alternative to S3 / Azure Blob Storage
