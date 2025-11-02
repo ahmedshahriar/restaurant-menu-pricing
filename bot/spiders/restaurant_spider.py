@@ -36,7 +36,7 @@ class RestaurantSpiderUS(scrapy.Spider):
     custom_settings = {
         # this will store the data in MongoDB as per the pipeline settings
         "ITEM_PIPELINES": {
-            "core.pipelines.BotPipeline": 300,
+            "bot.pipelines.BotPipeline": 300,
         },
     }
 

@@ -5,8 +5,8 @@ FROM python:3.11.9-slim AS app
 ARG APP_VERSION="0.0.0"
 
 # Label the image with version (to inspect it later)
-LABEL org.opencontainers.image.version=${APP_VERSION}
-LABEL org.opencontainers.image.title="restaurant-menu-pricing" \
+LABEL org.opencontainers.image.version=${APP_VERSION} \
+      org.opencontainers.image.title="restaurant-menu-pricing" \
       org.opencontainers.image.description="UberEats menu price prediction"
 
 # Set up environment vars for Python runtime behaviour
