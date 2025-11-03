@@ -48,7 +48,7 @@ jobs:
         working-directory: bot
         run: |
           python -m pip install --upgrade pip
-          pip install -r bot/requirements.txt
+          pip install -r requirements.txt
 
       - name: Prepare data dir
         run: mkdir -p "$(dirname "$CRAWLED_TASK_DATA_PATH")"
