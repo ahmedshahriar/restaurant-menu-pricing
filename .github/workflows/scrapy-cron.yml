@@ -16,14 +16,17 @@ on:
   # Triggers the workflow on push to test branch or cron job
 #  push:
 #    branches: [ dev ]
-  schedule:
-    - cron: "10 3 * * *"   # daily 03:10 UTC
+#  schedule:
+#    - cron: "10 3 * * *"   # daily 03:10 UTC
   workflow_dispatch: {} # manual trigger
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    # best practice would be to crawl data by splitting into smaller jobs if needed
+    # another approach would be to use a self-hosted runner with more resources
+    # optimize the crawl time by reducing the scope (e.g., fewer categories/restaurants/cities/region per run)
+    timeout-minutes: 60 # 1 hour adjust as needed
     env:
       CRAWLED_TASK_DATA_PATH: ${{ github.workspace }}/${{ secrets.CRAWLED_TASK_DATA_PATH }}
       MONGO_URI: ${{ secrets.MONGO_URI }}

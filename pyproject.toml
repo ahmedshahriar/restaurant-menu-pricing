@@ -143,7 +143,7 @@ cmd  = "poetry run scrapy crawl category_us"
 help = "Crawl UberEats categories, locations, and listing URLs (US)."
 
 # crawl restaurant menus and item details
-[tool.poe.tasks.crawl-ubereats]
+[tool.poe.tasks.crawl-ubereats-restaurants]
 cmd  = "poetry run scrapy crawl restaurant_us"
 help = "Crawl UberEats restaurant menus and item details (US)."
 
