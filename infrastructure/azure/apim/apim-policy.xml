@@ -1,0 +1,66 @@
+<!--
+    - Policies are applied in the order they appear.
+    - Position <base/> inside a section to inherit policies from the outer scope.
+    - Comments within policies are not preserved.
+-->
+<!-- Add policies as children to the <inbound>, <outbound>, <backend>, and <on-error> elements -->
+<policies>
+    <!-- Throttle, authorize, validate, cache, or transform the requests -->
+    <inbound>
+        <base />
+        <!-- Validate JSON & restrict size -->
+        <!-- Reject wrong/missing content types -->
+        <validate-content unspecified-content-type-action="prevent" max-size="1048576" size-exceeded-action="prevent">
+            <content-type-map missing-content-type-value="application/json">
+                <type from="application/json; charset=utf-8" to="application/json" />
+            </content-type-map>
+            <content type="application/json" validate-as="json" action="prevent" schema-id="payload-schema" />
+        </validate-content>
+        <!-- Ensure no caller-provided Authorization leaks downstream -->
+        <set-header name="Authorization" exists-action="delete" />
+        <!-- Correlation (echoed back in outbound & on-error) -->
+        <set-header name="x-correlation-id" exists-action="override">
+            <value>@(context.RequestId.ToString())</value>
+        </set-header>
+        <!-- Optional header: let caller pin a specific AML deployment -->
+        <choose>
+            <when condition="@(!string.IsNullOrWhiteSpace(context.Request.Headers.GetValueOrDefault('azureml-model-deployment','') ))">
+                <set-header name="azureml-model-deployment" exists-action="override">
+                    <value>@(context.Request.Headers.GetValueOrDefault("azureml-model-deployment",""))</value>
+                </set-header>
+            </when>
+            <otherwise>
+                <set-header name="azureml-model-deployment" exists-action="delete" />
+            </otherwise>
+        </choose>
+        <!-- Acquire Entra token to AML with APIM's Managed Identity -->
+        <authentication-managed-identity resource="https://ml.azure.com" />
+    </inbound>
+    <!-- Control if and how the requests are forwarded to services  -->
+    <backend>
+        <base />
+    </backend>
+    <!-- Customize the responses -->
+    <outbound>
+        <base />
+        <!-- Security headers -->
+        <set-header name="X-Content-Type-Options" exists-action="override">
+            <value>nosniff</value>
+        </set-header>
+        <set-header name="Strict-Transport-Security" exists-action="override">
+            <value>max-age=31536000; includeSubDomains</value>
+        </set-header>
+        <!-- Surface correlation id to caller -->
+        <set-header name="x-correlation-id" exists-action="override">
+            <value>@(context.RequestId.ToString())</value>
+        </set-header>
+    </outbound>
+    <!-- Handle exceptions and customize error responses  -->
+    <on-error>
+        <base />
+        <!--  include correlation id on errors -->
+        <set-header name="x-correlation-id" exists-action="override">
+            <value>@(context.RequestId.ToString())</value>
+        </set-header>
+    </on-error>
+</policies>
