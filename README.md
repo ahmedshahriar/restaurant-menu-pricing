@@ -297,8 +297,6 @@ All exploratory and experimental work is documented in the `notebooks/` director
 
 ## Quickstart
 
----
-
 ### Prerequisites
 
 * Python **3.11** (project targets 3.11)
@@ -810,6 +808,25 @@ With this setup, your canary and promotion workflow becomes fully automated, obs
 
 ### 8) API via Azure API Management
 
+The diagram below illustrates how requests flow from the client through Azure API Management (APIM) to the Azure ML endpoint for secure, validated model scoring.
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant APIM
+  participant AML as Azure ML Endpoint
+  participant Deploy as AML Deployment
+
+  Client->>APIM: POST /score (JSON)<br/>Ocp-Apim-Subscription-Key
+  APIM->>APIM: Validate key, size, JSON schema, rate limits
+  APIM->>APIM: (Optional) Check IP allow-list / mTLS
+  APIM->>AML: Forward /score with MI token (resource: https://ml.azure.com)
+  AML->>Deploy: Route by traffic weights<br/>or header azureml-model-deployment
+  Deploy-->>AML: Prediction response
+  AML-->>APIM: 200 / 4xx / 5xx
+  APIM-->>Client: Response (+ x-correlation-id)
+```
+
 <details>
 <summary><strong>Expose the Azure ML scoring endpoint via APIM</strong></summary>
 
@@ -882,7 +899,7 @@ A policy template is available at: `infrastructure/azure/apim/apim-policy.xml`
 This handles:
 - AAD token acquisition using APIM’s managed identity
 - Slot pinning via `azureml-model-deployment` header (optional)
-- Request validation, and header forwarding
+- Request validation, rate limiting, and header forwarding
 
 ---
 
@@ -940,6 +957,7 @@ You can also run the proxy API locally via Docker.
 <summary><strong>🚀 Build & Run the Scoring API Container</strong></summary>
 
 ```bash
+# run this from project root
 # build the API Docker image
 docker build -f services/api/Dockerfile -t menu-price-api:0.1.0 .
 
@@ -1032,9 +1050,6 @@ poetry poe delete-rg -- <resource-group>
 * Integration with a Feature Store (e.g., feature store with ingredient embeddings) for feature reuse & governance
 * CI/CD enhancements: PR-based smoke tests & gated promotions (blue/green → prod)
 * Add provisioning scripts and IaC templates: Azure APIM, Monitor alerts, Application Insights, full Azure ML workspace automation
-
----
-
 
 ## License
 
