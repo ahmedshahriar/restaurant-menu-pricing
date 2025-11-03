@@ -10,6 +10,11 @@
         <base />
         <!-- Validate JSON & restrict size -->
         <!-- Reject wrong/missing content types -->
+        <!--
+            The max-size value (1048576 bytes = 1MB) is a conservative upper bound for request payloads.
+            Menu pricing requests are typically much smaller, but this limit helps prevent abuse.
+            Operators may tune this value as appropriate for their expected request sizes.
+        -->
         <validate-content unspecified-content-type-action="prevent" max-size="1048576" size-exceeded-action="prevent">
             <content-type-map missing-content-type-value="application/json">
                 <type from="application/json; charset=utf-8" to="application/json" />
@@ -34,6 +39,9 @@
             </otherwise>
         </choose>
         <!-- Acquire Entra token to AML with APIM's Managed Identity -->
+        <!--
+        'https://ml.azure.com' is the Azure Active Directory (AAD) resource identifier for Azure Machine Learning authentication
+        -->
         <authentication-managed-identity resource="https://ml.azure.com" />
     </inbound>
     <!-- Control if and how the requests are forwarded to services  -->

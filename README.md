@@ -871,12 +871,12 @@ Then in <Your API> **Score → Frontend → Request**:
 ---
 
 ##### 7) Apply policy
-A policy template is available at: ```infrastructure/azure/apim/apim-policy.xml```
+A policy template is available at: `infrastructure/azure/apim/apim-policy.xml`
 
 This handles:
 - AAD token acquisition using APIM’s managed identity
 - Slot pinning via `azureml-model-deployment` header (optional)
-- Request validation, rate limiting, and header forwarding
+- Request validation, and header forwarding
 
 ---
 
