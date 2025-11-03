@@ -11,6 +11,11 @@
         <!-- Validate JSON & restrict size -->
         <!-- Reject wrong/missing content types -->
         <!--
+            Rate limit to 1000 calls per minute as a default.
+            Operators may tune this value based on expected traffic patterns and SLA requirements.
+        -->
+        <rate-limit calls="1000" renewal-period="60" />
+        <!--
             The max-size value (1048576 bytes = 1MB) is a conservative upper bound for request payloads.
             Menu pricing requests are typically much smaller, but this limit helps prevent abuse.
             Operators may tune this value as appropriate for their expected request sizes.
