@@ -1,0 +1,26 @@
+state_id,city,city_index,ny_index,cost_of_living_index
+tx,san antonio,89.8,168.6,53.26
+tx,austin,129.4,168.6,76.75
+wi,milwaukee,84.7,168.6,50.24
+va,richmond,96.1,168.6,57
+tx,fort worth,100.2,168.6,59.43
+wa,seattle,167.8,168.6,99.53
+va,fredericksburg,108.2,168.6,64.18
+va,alexandria,140.3,168.6,83.21
+wa,tacoma,118,168.6,69.99
+wa,vancouver,118,168.6,69.99
+wa,spokane,98.6,168.6,58.48
+wi,madison,101.4,168.6,60.14
+wa,everett,126.6,168.6,75.09
+ut,salt lake city,122,168.6,72.36
+tx,houston,95.5,168.6,56.64
+tx,plano,109.1,168.6,64.71
+va,fairfax,148.2,168.6,87.9
+va,roanoke,83.5,168.6,49.53
+wi,appleton,84.2,168.6,49.94
+wi,green bay,80.3,168.6,47.63
+wi,eau claire,89,168.6,52.79
+ut,west jordan,117.8,168.6,69.87
+ut,ogden,99.5,168.6,59.02
+ut,logan,94.9,168.6,56.29
+ut,layton,,168.6,114.6

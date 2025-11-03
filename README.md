@@ -238,7 +238,7 @@ Here is the directory overview:
 Model training is based on a curated dataset exported from the UberEats web-crawling pipeline, enriched with auxiliary city and cost-of-living data.
 
 - **UberEats Crawled Data** — collected via Scrapy, stored in MongoDB Atlas, and published to Kaggle:
-  [Uber Eats USA Restaurants & Menus Dataset](https://www.kaggle.com/datasets/ahmedshahriarsakib/uber-eats-usa-restaurants-menus) - contains 63K+ U.S. restaurants and 5M+ menu items with names, categories, prices, locations, and descriptions.
+  [Uber Eats USA Restaurants (63K+) & Menus (5 Million+) Dataset](https://www.kaggle.com/datasets/ahmedshahriarsakib/uber-eats-usa-restaurants-menus) - contains 63K+ U.S. restaurants and 5M+ menu items with names, categories, prices, locations, and descriptions.
 
 <details>
   <summary>Dataset Overview (click to expand)</summary>
@@ -265,8 +265,14 @@ Model training is based on a curated dataset exported from the UberEats web-craw
 </details>
 
 - **Auxiliary Data** — used for geographic and economic feature enrichment:
-  - [Cost of Living Index by City 2022](https://www.kaggle.com/datasets/kkhandekar/cost-of-living-index-by-city-2022)
-  - [Cost of living data source](https://www.bestplaces.net/cost-of-living/)
+  - **Cost of Living Index:** [Cost of living – bestplaces.net](https://www.bestplaces.net/cost-of-living/)
+    - The extracted cost of living index for the shortlisted states/cities (5 states, 25 cities) is provided in the `extras/data` directory.
+  - **Population Density:** [United States Cities Database](https://www.kaggle.com/datasets/sergejnuss/united-states-cities-database)
+
+> To capture how menu prices vary with location, I explored socio-economic factors such as **population density** and **cost of living** in the U.S.
+> The United States Cities Database (2022) includes population density alongside `city` and `state_id` fields, enabling the selection of **5 state–city combinations** (25 cities total).
+> Since no single public dataset covered cost-of-living indices for all restaurants, I manually extracted cost-of-living data for these shortlisted cities from [bestplaces.net](https://www.bestplaces.net/cost-of-living/), which is included under `extras/data/`.
+> See `notebooks/uber-eats-EDA.ipynb` for detailed exploration and feature correlation analysis.
 
 > Dataset generation and sampling logic lives under `application/dataset/` and `pipelines/`.
 
