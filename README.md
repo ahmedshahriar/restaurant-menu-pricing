@@ -56,10 +56,10 @@ Predict menu item prices from **UberEats** at scale — end-to-end: crawl → wa
   - [2) Export DWH](#2-export-dwh)
   - [3) Generate Training Sample](#3-generate-training-sample)
   - [4) Model Train, Tune & Register](#4-model-train-tune--register)
-  - [5) Serve Locally (MLflow)](#5-serve-locally-mlflow)
+  - [5) Model Serve (MLflow)](#5-model-serve-mlflow)
   - [6) Azure ML: Blue/Green Deploy & Autoscale](#6-azure-ml-bluegreen-deploy--autoscale)
   - [7) Traffic, Canary, Promote/Rollback](#7-traffic-canary-promoterollback)
-  - [8) API via Azure API Management](#8-api-via-azure-api-management)
+  - [8) Proxy API via Azure API Management](#8-proxy-api-via-azure-api-management)
   - [9) Proxy Scoring API (FastAPI)](#9-proxy-scoring-api)
 - [Quality: Lint, Tests, Coverage](#quality-lint-tests-coverage)
 - [Operational Notes & Best Practices](#operational-notes--best-practices)
@@ -269,12 +269,13 @@ Model training is based on a curated dataset exported from the UberEats web-craw
     - The extracted cost of living index for the shortlisted states/cities (5 states, 25 cities) is provided in the `extras/data` directory.
   - **Population Density:** [United States Cities Database](https://www.kaggle.com/datasets/sergejnuss/united-states-cities-database)
 
+> [!NOTE]
 > To capture how menu prices vary with location, I explored socio-economic factors such as **population density** and **cost of living** in the U.S.
 > The United States Cities Database (2022) includes population density alongside `city` and `state_id` fields, enabling the selection of **5 state–city combinations** (25 cities total).
 > Since no single public dataset covered cost-of-living indices for all restaurants, I manually extracted cost-of-living data for these shortlisted cities from [bestplaces.net](https://www.bestplaces.net/cost-of-living/), which is included under `extras/data/`.
 > See `notebooks/uber-eats-EDA.ipynb` for detailed exploration and feature correlation analysis.
 
-> Dataset generation and sampling logic lives under `application/dataset/` and `pipelines/`.
+> Dataset generation and sampling logic lives under `application/dataset/`.
 
 ---
 
@@ -572,6 +573,17 @@ poetry poe dwh-export
 
 Exports normalized **restaurants** and **menus** data to your configured data directory.
 
+<details>
+  <summary>🔧 Sample Screenshot — DWH Export Run</summary>
+
+  <div style="text-align: center;">
+    <img src="https://github.com/user-attachments/assets/b60cc09b-0425-4485-a75a-0cbc36efc54b"
+         alt="dwh-export"
+         style="width:90%; max-width:1416px; height:auto;" />
+  </div>
+</details>
+
+
 ---
 
 ### 3) Generate Training Sample
@@ -581,6 +593,15 @@ poetry poe generate-train-sample
 ```
 
 Downloads the published export (via Kaggle), enriches features, filters outliers, and writes a **reproducible** training sample.
+
+<details>
+  <summary>🔧 Sample Screenshot — Training Sample Generation Run</summary>
+  <div style="text-align: center;">
+    <img src="https://github.com/user-attachments/assets/67ef93a1-3699-45d8-afc6-ecda158e7c47"
+         alt="generate-train-sample"
+         width="90%" />
+  </div>
+</details>
 
 ---
 
@@ -607,7 +628,7 @@ Artifacts and metrics are logged to **Azure ML** via **MLflow**; best model is r
 
 ---
 
-### 5) Serve Locally (MLflow)
+### 5) Model Serve (MLflow)
 
 ```bash
 # Serve the latest registered MLflow model locally
@@ -806,7 +827,7 @@ With this setup, your canary and promotion workflow becomes fully automated, obs
 
 ---
 
-### 8) API via Azure API Management
+### 8) Proxy API via Azure API Management
 
 The diagram below illustrates how requests flow from the client through Azure API Management (APIM) to the Azure ML endpoint for secure, validated model scoring.
 
@@ -921,7 +942,7 @@ Ocp-Apim-Subscription-Key: <their key>
 
 </details>
 
-Test the Azure API (APIM) via poetry poe tasks:
+Execute APIM scoring and trace with poetry `poe` tasks:
 
 ```bash
 # Score default deployment through APIM
@@ -933,17 +954,42 @@ poetry poe apim-score-blue
 
 # Debug headers/trace
 poetry poe apim-trace
+```
 
+<details>
+  <summary>🔧 Sample Screenshot — Azure APIM Proxy Trace</summary>
+
+  <div style="text-align: center;">
+    <img src="https://github.com/user-attachments/assets/d18a79dd-0c90-4c85-870b-14aaae04f87e"
+         alt="APIM-API-trace"
+         style="width:90%; max-width:1408px; height:auto;" />
+  </div>
+</details>
+
+Run the Streamlit UI:
+
+```bash
 # Optional demo UI
 poetry poe apim-ui
 ```
+
+<details>
+  <summary>🖥️ Sample Screenshot — Streamlit Frontend (via Azure APIM → Azure ML Endpoint)</summary>
+
+  <div style="text-align: center;">
+    <img src="https://github.com/user-attachments/assets/9ff04b1f-2073-4502-a657-7ead8e2825cf"
+         alt="APIM-Proxy-API-Streamlit-UI"
+         style="width:90%; max-width:645px; height:auto;" />
+  </div>
+</details>
+
 
 ---
 
 ### 9) Proxy Scoring API
 
 ```bash
-# Run FastAPI server locally
+# Run FastAPI server
 poetry poe api-run
 # Test local API
 poetry poe api-score
@@ -979,6 +1025,17 @@ docker run --name <menu-price-api-container> --rm -p 8000:8000 \
   menu-price-api:0.1.0
 ```
 </details>
+
+<details>
+  <summary>🔧 Sample Screenshot — Proxy API Request Flow (Docker)</summary>
+
+  <div style="text-align: center;">
+    <img src="https://github.com/user-attachments/assets/b93c4bf2-39e2-48bd-9836-e904028f638b"
+         alt="docker-container-proxy-API"
+         style="width:90%; max-width:1268px; height:auto;" />
+  </div>
+</details>
+
 
 ---
 
