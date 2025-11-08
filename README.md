@@ -65,6 +65,7 @@ Predict menu item prices from **UberEats** at scale — end-to-end: crawl → wa
 - [Operational Notes & Best Practices](#operational-notes--best-practices)
 - [Roadmap](#roadmap)
 - [Disclaimer](#disclaimer)
+- [Acknowledgments](#acknowledgments)
 - [License](#license)
 
 ---
