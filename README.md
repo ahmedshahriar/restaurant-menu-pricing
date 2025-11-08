@@ -64,6 +64,7 @@ Predict menu item prices from **UberEats** at scale — end-to-end: crawl → wa
 - [Quality: Lint, Tests, Coverage](#quality-lint-tests-coverage)
 - [Operational Notes & Best Practices](#operational-notes--best-practices)
 - [Roadmap](#roadmap)
+- [Disclaimer](#disclaimer)
 - [License](#license)
 
 ---
@@ -1072,6 +1073,7 @@ poetry poe api-cov          # Generate coverage report for API
 
   * Dataset sampling is deterministic, **Optuna** is seeded, **MLflow** tracks experiments and versions.
   * The `.github/workflows/cd.yml` workflow automates building and publishing the Docker image to GitHub Container Registry (**GHCR**) on every push to a version tag (`v*.*.*`) or via manual trigger.
+    * A good article on this [DockerHub or GHCR or ECR](https://blog.devops.dev/docker-hub-or-ghcr-or-ecr-lazy-mans-guide-4da1d943d26e)
 
 * **Deployments**
 
@@ -1108,6 +1110,23 @@ poetry poe delete-rg -- <resource-group>
 * CI/CD enhancements: PR-based smoke tests & gated promotions (blue/green → prod)
 * Add provisioning scripts and IaC templates: Azure APIM, Monitor alerts, Application Insights, full Azure ML workspace automation
 
-## License
+## Disclaimer
+This repository is for educational and research use only. It may reference or link to publicly available third-party content. All copyrights and trademarks remain with their respective owners. No endorsement or affiliation is implied.
 
-Apache-2.0 license (see `LICENSE`)
+By using this project you agree to:
+- Comply with the licenses and terms of service of any third-party sources (including robots.txt and rate limits) when collecting or using data.
+- Avoid including personal, proprietary, or sensitive data in configuration, prompts, logs, or datasets.
+
+## Acknowledgments
+This project draws on public posts, code, and tutorials from the data science and MLOps communities. Special thanks to:
+- [Azure ML documentation and samples](https://learn.microsoft.com/en-us/azure/machine-learning/)
+- [Optuna documentation](https://optuna.org/)
+- [MLflow documentation](https://mlflow.org/docs/latest/index.html)
+- [Hugging Face Transformers](https://huggingface.co/docs/transformers/index)
+- [FastAPI documentation](https://fastapi.tiangolo.com/)
+- [Streamlit documentation](https://docs.streamlit.io/)
+
+
+## License
+- Code is licensed under: Apache-2.0 (see `LICENSE`).
+- By using this project, you agree to the terms outlined in the [Disclaimer](#disclaimer) section.
