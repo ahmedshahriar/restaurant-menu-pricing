@@ -71,3 +71,11 @@ jobs:
         run: |
           echo "Running tests..."
           poetry poe test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # optional if public
+          files: ./coverage.xml
+          fail_ci_if_error: true
+          verbose: true # optional, shows more debugging info
