@@ -464,8 +464,8 @@ help = "Delete the Azure resource group and everything inside it (usage: poetry 
 [tool.poe.tasks.test]
 # either simple test run
 #cmd = "poetry run pytest tests/"
-# or test with coverage (--cov-branch  to include branch coverage)
-cmd = "poetry run pytest --cov=. --cov-branch --cov-report=xml tests/"
+# or test with coverage (--cov-branch to include branch coverage)
+cmd = "poetry run pytest --cov-branch --cov-report=xml tests/"
 
 # -----------------------------
 # --- Pytest Configuration ---
