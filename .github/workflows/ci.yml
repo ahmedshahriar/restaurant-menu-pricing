@@ -1,7 +1,15 @@
 name: CI
 
 on:
+  push:
+    branches:
+      - main
+      - staging
   pull_request:
+    branches:
+      - main
+      - staging
+  workflow_dispatch:  # allows manual runs from the GitHub UI
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,9 +34,17 @@ jobs:
         with:
           poetry-version: 2.2.1
 
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+
       - name: Install packages
         run: |
-          poetry install --only dev --no-root
+          poetry install --only dev --no-root --sync
           poetry self add 'poethepoet[poetry_plugin]'
 
       - name: Lint check [Python]
@@ -40,6 +56,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    needs: [qa]  # ensures lint/format checks pass first
     env:
       # Prevent optional deep learning backends (TensorFlow, Flax) from loading
       # to avoid illegal instruction errors in CI and speed up startup.
@@ -62,9 +79,17 @@ jobs:
         with:
           poetry-version: 2.2.1
 
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+
       - name: Install packages
         run: |
-          poetry install --no-root
+          poetry install --no-root --sync
           poetry self add 'poethepoet[poetry_plugin]'
 
       - name: Run tests
@@ -73,6 +98,7 @@ jobs:
           poetry poe test
 
       - name: Upload coverage to Codecov
+        if: github.event_name == 'push' # only on push events to avoid redundant reports
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # optional if public
