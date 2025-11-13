@@ -87,7 +87,7 @@ This repository provides a **production-grade menu price prediction service**, i
 #### Data Engineering
 
 * **ETL**: Scrapy pipelines crawl UberEats and store normalized restaurant data in **MongoDB Atlas (DWH)**
-* Automated **GitHub Actions (cron)** for data ingestion, logging, and error handling
+* Automated Cron Jobs for data ingestion, logging, and error handling
 * Curated datasets exported to **Kaggle** ([`dataset link`](https://www.kaggle.com/datasets/ahmedshahriarsakib/uber-eats-usa-restaurants-menus)) for reproducible ML experiments
 
 #### Machine Learning
@@ -103,7 +103,7 @@ A production-ready deployment stack on **Azure ML**, emphasizing reliability, sc
 * **Model Deployment**
 
   * Blue/Green or Canary rollout via **Azure ML Managed Online Endpoints** (supports traffic-splits between deployments)
-  * Infrastructure provisioned and autoscale rules defined via **Azure IaC templates (ARM/Bicep)**
+  * Infrastructure provisioned and autoscale rules defined via **Azure IaC templates (ARM)**
 
 * **Monitoring & Autoscaling**
 
@@ -118,7 +118,8 @@ A production-ready deployment stack on **Azure ML**, emphasizing reliability, sc
 * **Operations & Reliability**
 
   * Automated smoke tests, canary traffic shift workflows and rollback mechanisms during deployments
-  * CLI utilities and Azure CLI scripts for endpoint management, rollout/promote/rollback and full lifecycle automation
+  * Comprehensive **Poetry CLI tooling** and **Azure CLI bash scripts** for endpoint management, rollout/promote/rollback and full lifecycle automation
+  * **CI/CD workflow** automates building and publishing the Docker image to GitHub Container Registry
 
 ---
 
@@ -807,7 +808,7 @@ Production-grade canary control depends on proper observability through Azure Mo
 
   * Enabled through the Azure ML workspace and attached to online endpoints.
   * Query using *Azure Monitor Workbooks* (or Kusto queries) for response time and error rates.
-* **Log Analytics** – aggregates logs from deployments and Azure APIM ([Check](#8-api-via-azure-api-management)) into a unified workspace for end-to-end traceability.
+* **Log Analytics** – aggregates logs from deployments and Azure APIM ([Check](#8-proxy-api-via-azure-api-management)) into a unified workspace for end-to-end traceability.
 * **Alerts & Action Groups** – create metric-based alerts on failure rates, P95 latency, or abnormal CPU usage.
 
   * Example: trigger email notifications when error rate > 5% or latency exceeds threshold.
